@@ -1,5 +1,67 @@
 # Changelog
 
+## 5.27.1.0
+* Certified with MyTarget SDK 5.27.1.
+
+## 5.27.0.0
+* Certified with MyTarget SDK 5.27.0.
+
+## 5.26.0.0
+* Certified with MyTarget SDK 5.26.0.
+
+## 5.25.0.0
+* Certified with MyTarget SDK 5.25.0.
+
+## 5.24.0.0
+* Certified with MyTarget SDK 5.24.0.
+
+## 5.23.0.0
+* Certified with MyTarget SDK 5.23.0.
+* Implement `onFailedToShow()` callbacks for interstitial and rewarded ads.
+
+## 5.22.1.2
+* Add support for loading fullscreen ads without an `Activity` context.
+* Annotated all `Activity` parameters with `@Nullable` to better avoid potential NPEs.
+
+## 5.22.1.1
+* Requires minimum AppLovin MAX SDK version be 13.0.0.
+* Removed support for COPPA.
+* Remove deprecated native API usages.
+
+## 5.22.1.0
+* Certified with MyTarget SDK 5.22.1.
+
+## 5.22.0.0
+* Certified with MyTarget SDK 5.22.0.
+
+## 5.21.1.0
+* Certified with MyTarget SDK 5.21.1.
+
+## 5.21.0.0
+* Certified with MyTarget SDK 5.21.0.
+* Remove deprecated callbacks `onRewardedAdVideoStarted()` and `onRewardedAdVideoCompleted()`.
+
+## 5.20.1.0
+* Certified with MyTarget SDK 5.20.1.
+
+## 5.20.0.0
+* Certified with MyTarget SDK 5.20.0.
+
+## 5.19.0.0
+* Certified with MyTarget SDK 5.19.0.
+
+## 5.18.0.0
+* Certified with MyTarget SDK 5.18.0.
+* Update `onNoAd` method with `IAdLoadingError` parameter and update error code mapping.
+
+## 5.17.0.0
+* Certified with MyTarget SDK 5.17.0.
+
+## 5.16.5.0
+* Certified with MyTarget SDK 5.16.5.
+* Remove the `getPrivacySetting()` function and call privacy methods directly.
+* Now requires MAX SDK version 9.14.0 or higher.
+
 ## 5.16.4.0
 * Certified with MyTarget SDK 5.16.4.
 

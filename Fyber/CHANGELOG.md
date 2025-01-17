@@ -1,5 +1,60 @@
 # Changelog
 
+## 8.3.5.0
+* Certified with Fyber SDK 8.3.5.
+
+## 8.3.4.0
+* Certified with Fyber SDK 8.3.4.
+* Removed redundant log output when initialization was already completed.
+
+## 8.3.3.0
+* Certified with Fyber SDK 8.3.3.
+
+## 8.3.2.0
+* Certified with Fyber SDK 8.3.2.
+
+## 8.3.1.2
+* Fix NPE when binding `adViewGroup` after it has been destroyed.
+* Annotated all `Activity` parameters with `@Nullable` to better avoid potential NPEs.
+
+## 8.3.1.1
+* Requires minimum AppLovin MAX SDK version be 13.0.0.
+* Removed support for COPPA.
+
+## 8.3.1.0
+* Certified with Fyber SDK 8.3.1.
+
+## 8.3.0.0
+* Certified with Fyber SDK 8.3.0.
+* Remove String validation for signal.
+
+## 8.2.7.1
+* Fix `Unsupported class file major version 65` build error when using JDK < 21.
+
+## 8.2.7.0
+* Certified with Fyber SDK 8.2.7.
+* Remove deprecated callbacks `onRewardedAdVideoStarted()` and `onRewardedAdVideoCompleted()`.
+
+## 8.2.6.0
+* Certified with Fyber SDK 8.2.6.
+
+## 8.2.5.0
+* Certified with Fyber SDK 8.2.5.
+
+## 8.2.4.0
+* Certified with Fyber SDK 8.2.4.
+
+## 8.2.3.3
+* Fix to call `InneractiveAdManager.setMediationName()` and `InneractiveAdManager.setMediationVersion()` before initialization.
+
+## 8.2.3.2
+* Call `InneractiveAdManager.setMediationName()` and `InneractiveAdManager.setMediationVersion()` statically at the time of signal collection.
+
+## 8.2.3.1
+* Call `InneractiveAdManager.currentAudienceAppliesToCoppa()` after SDK initialization.
+* Remove the `getPrivacySetting()` function and call privacy methods directly.
+* Now requires MAX SDK version 9.14.0 or higher.
+
 ## 8.2.3.0
 * Certified with Fyber SDK 8.2.3.
 
@@ -65,7 +120,7 @@
 * Update mute APIs to use `InneractiveAdManager.setMuteVideo(...)`.
 
 ## 7.8.4.2
-* Send MAX SDK version instead of adapter version. 
+* Send MAX SDK version instead of adapter version.
 
 ## 7.8.4.1
 * Fix potential memory leak by cleaning up ad view ad object.

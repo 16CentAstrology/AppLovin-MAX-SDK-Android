@@ -1,5 +1,38 @@
 # Changelog
 
+## 6.4.2.2
+* Added a guard to attempt HyprMX SDK initialization only once to match other adapters and avoid HyprMX SDK initialization errors.
+* Annotated all `Activity` parameters with `@Nullable` to better avoid potential NPEs.
+
+## 6.4.2.1
+* Requires minimum AppLovin MAX SDK version be 13.0.0.
+* Removed support for COPPA.
+* Add support for bidding on banners/MRECs, interstitials, and rewarded ads.
+
+## 6.4.2.0
+* Certified with HyprMX SDK 6.4.2.
+
+## 6.4.1.0
+* Certified with HyprMX SDK 6.4.1.
+
+## 6.4.0.0
+* Certified with HyprMX SDK 6.4.0.
+* Update to use new initialization and ad callback APIs.
+* Remove deprecated callbacks `onRewardedAdVideoStarted()` and `onRewardedAdVideoCompleted()`.
+
+## 6.2.3.0
+* Certified with HyprMX SDK 6.2.3.
+
+## 6.2.0.2
+* Add ProGuard rule to not obfuscate public HyprMX SDK classes.
+
+## 6.2.0.1
+* Remove the `ageRestrictedUser` check from user consent.
+
+## 6.2.0.0
+* Certified with HyprMX SDK 6.2.0.
+* Add additional details for ad display failures.
+
 ## 6.0.3.1
 * Set consent based on a mix of 'hasUserConsent', 'ageRestrictedUser' and 'doNotSell' values.
 

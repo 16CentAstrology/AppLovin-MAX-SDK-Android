@@ -1,5 +1,98 @@
 # Changelog
 
+## 23.6.0.2
+* Add support for [inline adaptive banners in MRECs](https://developers.applovin.com/en/max/android/ad-formats/banner-and-mrec-ads/#inline-adaptive-banners-in-mrecs).
+* Remove support for rewarded interstitial ads.
+
+## 23.6.0.1
+* Fixed native ads to no longer require the media view in external plugins to be clickable.
+
+## 23.6.0.0
+* Certified with Google SDK 23.6.0.
+
+## 23.5.0.0
+* Certified with Google SDK 23.5.0.
+* Added comments noting that fullscreen ads can be shown without an `Activity` context.
+
+## 23.4.0.1
+* Add support for loading ads without an `Activity` context.
+* Annotated all `Activity` parameters with `@Nullable` to better avoid potential NPEs.
+
+## 23.4.0.0
+* Certified with Google SDK 23.4.0.
+
+## 23.3.0.1
+* Requires minimum AppLovin MAX SDK version be 13.0.0.
+* Removed support for COPPA.
+* Remove deprecated native API usages.
+
+## 23.3.0.0
+* Certified with Google SDK 23.3.0.
+
+## 23.2.0.1
+* Add support for [inline adaptive banner ads](https://developers.applovin.com/en/android/ad-formats/banner-mrec-ads/#inline-adaptive-banners).
+
+## 23.2.0.0
+* Certified with Google SDK 23.2.0.
+
+## 23.1.0.0
+* Certified with Google SDK 23.1.0.
+
+## 23.0.0.1
+* Update adaptive banner width calculation to always use `Display.getMetrics()` instead of using `WindowMetrics.getBounds()` when available. The latter returns the full width of the device instead of the app window.
+* Remove deprecated callbacks `onRewardedAdVideoStarted()`, `onRewardedAdVideoCompleted()`, `onRewardedInterstitialAdVideoStarted()` and `onRewardedInterstitialAdVideoCompleted`.
+
+## 23.0.0.0
+* Certified with Google SDK 23.0.0
+* Now requires minimum Android API level be 21 or higher.
+
+## 22.6.0.1
+* Use `apply()` when saving to `SharedPreferences` to prevent ANRs.
+
+## 22.6.0.0
+* Certified with Google SDK 22.6.0.
+
+## 22.5.0.1
+* Improve error handling.
+
+## 22.5.0.0
+* Certified with Google SDK 22.5.0.
+
+## 22.4.0.1
+* Fix rendering of native ad video content in React Native or Flutter.
+
+## 22.4.0.0
+* Certified with Google SDK 22.4.0.
+
+## 22.3.0.0
+* Certified with Google SDK 22.3.0.
+
+## 22.2.0.2
+* Add support for bidding on app open ads.
+
+## 22.2.0.1
+* Updated the device width measurement logic for adaptive banners to match [AdMob's logic](https://developers.google.com/admob/android/banner/anchored-adaptive).
+
+## 22.2.0.0
+* Certified with Google SDK 22.2.0.
+
+## 22.1.0.4
+* Update CCPA state if granted mid-session.
+
+## 22.1.0.3
+* Re-enable support for adaptive banner traffic for Google bidding since their sizing issue is resolved.
+
+## 22.1.0.2
+* Fix `int java.lang.Integer.intValue()` NPE for native ads.
+
+## 22.1.0.1
+* Support for native ads in external plugins (e.g. React Native).
+
+## 22.1.0.0
+* Certified with Google SDK 22.1.0.
+* Remove the `getPrivacySetting()` function and call privacy methods directly.
+* Now requires MAX SDK version 9.14.0 or higher.
+
 ## 22.0.0.2
 * Re-certified with GoogleAdManager SDK 22.0.0.
 * Remove client-side setting of test device ids.
@@ -178,7 +271,7 @@
 
 ## 20.0.0.0
 * Certified with Google SDK 20.0.0.
-* Remove `setIsDesignedForFamilies()` method. As a result `is_designed_for_families` is not passed to Google anymore. 
+* Remove `setIsDesignedForFamilies()` method. As a result `is_designed_for_families` is not passed to Google anymore.
 
 ## 19.8.0.0
 * Certified with Google SDK 19.8.0.

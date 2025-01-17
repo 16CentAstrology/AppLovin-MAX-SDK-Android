@@ -2,7 +2,6 @@ package com.applovin.mediation.adapters;
 
 import android.app.Activity;
 import android.app.Application;
-import android.os.Bundle;
 import android.text.TextUtils;
 
 import com.applovin.mediation.MaxAdFormat;
@@ -22,7 +21,6 @@ import com.applovin.mediation.adapter.parameters.MaxAdapterResponseParameters;
 import com.applovin.mediation.adapter.parameters.MaxAdapterSignalCollectionParameters;
 import com.applovin.mediation.adapters.verve.BuildConfig;
 import com.applovin.sdk.AppLovinSdk;
-import com.applovin.sdk.AppLovinSdkConfiguration;
 
 import net.pubnative.lite.sdk.HyBid;
 import net.pubnative.lite.sdk.HyBidError;
@@ -32,10 +30,11 @@ import net.pubnative.lite.sdk.models.AdSize;
 import net.pubnative.lite.sdk.models.ImpressionTrackingMethod;
 import net.pubnative.lite.sdk.rewarded.HyBidRewardedAd;
 import net.pubnative.lite.sdk.views.HyBidAdView;
-import net.pubnative.lite.sdk.vpaid.enums.AudioState;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import androidx.annotation.Nullable;
 
 public class VerveMediationAdapter
         extends MediationAdapterBase
@@ -64,7 +63,7 @@ public class VerveMediationAdapter
     }
 
     @Override
-    public void initialize(final MaxAdapterInitializationParameters parameters, final Activity activity, final OnCompletionListener onCompletionListener)
+    public void initialize(final MaxAdapterInitializationParameters parameters, @Nullable final Activity activity, final OnCompletionListener onCompletionListener)
     {
         if ( initialized.compareAndSet( false, true ) )
         {
@@ -78,10 +77,7 @@ public class VerveMediationAdapter
                 HyBid.setTestMode( true );
             }
 
-            // NOTE: `activity` can only be null in 11.1.0+, and `getApplicationContext()` is introduced in 11.1.0
-            Application application = ( activity != null ) ? activity.getApplication() : (Application) getApplicationContext();
-
-            HyBid.initialize( appToken, application );
+            HyBid.initialize( appToken, (Application) getApplicationContext() );
 
             if ( HyBid.isInitialized() )
             {
@@ -98,7 +94,6 @@ public class VerveMediationAdapter
         }
         else
         {
-            log( "Verve attempted to initialize already - marking initialization as " + status );
             onCompletionListener.onCompletion( status, null );
         }
     }
@@ -126,7 +121,7 @@ public class VerveMediationAdapter
     }
 
     @Override
-    public void collectSignal(final MaxAdapterSignalCollectionParameters parameters, final Activity activity, final MaxSignalCollectionListener callback)
+    public void collectSignal(final MaxAdapterSignalCollectionParameters parameters, @Nullable final Activity activity, final MaxSignalCollectionListener callback)
     {
         log( "Collecting Signal..." );
 
@@ -139,7 +134,7 @@ public class VerveMediationAdapter
     }
 
     @Override
-    public void loadInterstitialAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxInterstitialAdapterListener listener)
+    public void loadInterstitialAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxInterstitialAdapterListener listener)
     {
         log( "Loading interstitial ad" );
 
@@ -153,14 +148,13 @@ public class VerveMediationAdapter
 
         updateLocationCollectionEnabled( parameters );
         updateUserConsent( parameters );
-        updateMuteState( parameters );
 
-        interstitialAd = new HyBidInterstitialAd( activity, new InterstitialListener( listener ) );
+        interstitialAd = new HyBidInterstitialAd( getApplicationContext(), null, "", new InterstitialListener( listener ) );
         interstitialAd.prepareAd( parameters.getBidResponse() );
     }
 
     @Override
-    public void showInterstitialAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxInterstitialAdapterListener listener)
+    public void showInterstitialAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxInterstitialAdapterListener listener)
     {
         log( "Showing interstitial ad..." );
 
@@ -176,7 +170,7 @@ public class VerveMediationAdapter
     }
 
     @Override
-    public void loadRewardedAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxRewardedAdapterListener listener)
+    public void loadRewardedAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxRewardedAdapterListener listener)
     {
         log( "Loading rewarded ad" );
 
@@ -190,14 +184,13 @@ public class VerveMediationAdapter
 
         updateLocationCollectionEnabled( parameters );
         updateUserConsent( parameters );
-        updateMuteState( parameters );
 
-        rewardedAd = new HyBidRewardedAd( activity, new RewardedListener( listener ) );
+        rewardedAd = new HyBidRewardedAd( getApplicationContext(), null, "", new RewardedListener( listener ) );
         rewardedAd.prepareAd( parameters.getBidResponse() );
     }
 
     @Override
-    public void showRewardedAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxRewardedAdapterListener listener)
+    public void showRewardedAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxRewardedAdapterListener listener)
     {
         log( "Showing rewarded ad..." );
 
@@ -214,7 +207,7 @@ public class VerveMediationAdapter
     }
 
     @Override
-    public void loadAdViewAd(final MaxAdapterResponseParameters parameters, final MaxAdFormat adFormat, final Activity activity, final MaxAdViewAdapterListener listener)
+    public void loadAdViewAd(final MaxAdapterResponseParameters parameters, final MaxAdFormat adFormat, @Nullable final Activity activity, final MaxAdViewAdapterListener listener)
     {
         log( "Loading " + adFormat.getLabel() + " ad view ad..." );
 
@@ -228,9 +221,8 @@ public class VerveMediationAdapter
 
         updateLocationCollectionEnabled( parameters );
         updateUserConsent( parameters );
-        updateMuteState( parameters );
 
-        adViewAd = new HyBidAdView( activity, getSize( adFormat ) );
+        adViewAd = new HyBidAdView( getApplicationContext(), getSize( adFormat ) );
         adViewAd.setTrackingMethod( ImpressionTrackingMethod.AD_VIEWABLE );
         adViewAd.renderAd( parameters.getBidResponse(), new AdViewListener( listener ) );
     }
@@ -238,27 +230,31 @@ public class VerveMediationAdapter
     private void updateUserConsent(final MaxAdapterParameters parameters)
     {
         // From PubNative: "HyBid SDK is TCF v2 compliant, so any change in the IAB consent string will be picked up by the SDK."
-        // Because of this, they requested that we don't update consent values if one is already set.
+        // Because of this, they requested that we don't update consent values if one is already set and use binary consent state as a fallback.
         // As a side effect, pubs that use the MAX consent flow will not be able to update consent values mid-session.
         // Full context in this PR: https://github.com/AppLovin/AppLovin-MAX-SDK-iOS/pull/57
 
         UserDataManager userDataManager = HyBid.getUserDataManager();
 
         Boolean hasUserConsent = parameters.hasUserConsent();
-        if ( hasUserConsent != null && userDataManager != null && TextUtils.isEmpty( userDataManager.getIABGDPRConsentString() ) )
+        if ( hasUserConsent != null && userDataManager != null )
         {
-            userDataManager.setIABGDPRConsentString( hasUserConsent ? "1" : "0" );
+            // NOTE: verveGDPRConsentString can be nil, TCFv2 consent string, "1" or "0"
+            String verveGDPRConsentString = userDataManager.getIABGDPRConsentString();
+
+            // If hasUserConsent is set to false, set consent string to "0"
+            if ( !hasUserConsent )
+            {
+                userDataManager.setIABGDPRConsentString( "0" );
+            }
+            // If hasUserConsent is set to true, only override if it has not been set to a TCFv2 consent string or is set to "0"
+            else if ( TextUtils.isEmpty( verveGDPRConsentString ) || verveGDPRConsentString.equals( "0" ) )
+            {
+                userDataManager.setIABGDPRConsentString( "1" );
+            }
         }
 
-        // NOTE: Adapter / mediated SDK has support for COPPA, but is not approved by Play Store and therefore will be filtered on COPPA traffic
-        // https://support.google.com/googleplay/android-developer/answer/9283445?hl=en
-        Boolean isAgeRestrictedUser = parameters.isAgeRestrictedUser();
-        if ( isAgeRestrictedUser != null )
-        {
-            HyBid.setCoppaEnabled( isAgeRestrictedUser );
-        }
-
-        if ( AppLovinSdk.VERSION_CODE >= 91100 && userDataManager != null && TextUtils.isEmpty( userDataManager.getIABUSPrivacyString() ) )
+        if ( userDataManager != null && TextUtils.isEmpty( userDataManager.getIABUSPrivacyString() ) )
         {
             Boolean isDoNotSell = parameters.isDoNotSell();
             if ( isDoNotSell != null && isDoNotSell )
@@ -271,15 +267,12 @@ public class VerveMediationAdapter
 
     private void updateLocationCollectionEnabled(final MaxAdapterParameters parameters)
     {
-        if ( AppLovinSdk.VERSION_CODE >= 11_00_00_00 )
+        Map<String, Object> localExtraParameters = parameters.getLocalExtraParameters();
+        Object isLocationCollectionEnabledObj = localExtraParameters.get( "is_location_collection_enabled" );
+        if ( isLocationCollectionEnabledObj instanceof Boolean )
         {
-            Map<String, Object> localExtraParameters = parameters.getLocalExtraParameters();
-            Object isLocationCollectionEnabledObj = localExtraParameters.get( "is_location_collection_enabled" );
-            if ( isLocationCollectionEnabledObj instanceof Boolean )
-            {
-                log( "Setting location collection enabled: " + isLocationCollectionEnabledObj );
-                HyBid.setLocationUpdatesEnabled( (boolean)isLocationCollectionEnabledObj );
-            }
+            log( "Setting location collection enabled: " + isLocationCollectionEnabledObj );
+            HyBid.setLocationUpdatesEnabled( (boolean) isLocationCollectionEnabledObj );
         }
     }
 
@@ -300,22 +293,6 @@ public class VerveMediationAdapter
         else
         {
             throw new IllegalArgumentException( "Invalid ad format: " + adFormat );
-        }
-    }
-
-    private static void updateMuteState(final MaxAdapterResponseParameters parameters)
-    {
-        Bundle serverParameters = parameters.getServerParameters();
-        if ( serverParameters.containsKey( "is_muted" ) )
-        {
-            if ( serverParameters.getBoolean( "is_muted" ) )
-            {
-                HyBid.setVideoAudioStatus( AudioState.MUTED );
-            }
-            else
-            {
-                HyBid.setVideoAudioStatus( AudioState.DEFAULT );
-            }
         }
     }
 
@@ -363,7 +340,7 @@ public class VerveMediationAdapter
                     break;
                 case DISABLED_FORMAT:
                 case DISABLED_RENDERING_ENGINE:
-                case ERROR_LOADING_FEEDBACK: 
+                case ERROR_LOADING_FEEDBACK:
                     adapterError = MaxAdapterError.INVALID_LOAD_STATE;
                     break;
                 case EXPIRED_AD:
@@ -452,7 +429,6 @@ public class VerveMediationAdapter
         {
             log( "Rewarded ad did track impression" );
             listener.onRewardedAdDisplayed();
-            listener.onRewardedAdVideoStarted();
         }
 
         @Override
@@ -473,7 +449,6 @@ public class VerveMediationAdapter
         public void onRewardedClosed()
         {
             log( "Rewarded ad did disappear" );
-            listener.onRewardedAdVideoCompleted();
 
             if ( hasGrantedReward || shouldAlwaysRewardUser() )
             {

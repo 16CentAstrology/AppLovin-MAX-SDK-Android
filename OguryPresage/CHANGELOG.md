@@ -1,5 +1,40 @@
 # Changelog
 
+## 6.0.1.0
+* Certified with OguryPresage SDK 6.0.1.
+
+## 6.0.0.1
+* Fix missing MAX SDK name and version for AdView ad requests.
+
+## 6.0.0.0
+* Certified with OguryPresage SDK 6.0.0.
+* Annotated all `Activity` parameters with `@Nullable` to better avoid potential NPEs.
+
+## 5.8.0.0
+* Certified with OguryPresage SDK 5.8.0.
+* Add support for passing in MAX SDK name and version.
+
+## 5.7.0.0
+* Certified with OguryPresage SDK 5.7.0.
+
+## 5.6.2.2
+* Remove privacy method calls as `OguryChoiceManagerExternal.setConsent()` is deprecated and [OguryPresage SDK can collect TCF string directly from disk](https://ogury-ltd.gitbook.io/android/ogury-choice-manager/third-party-consent-manager#case-a-your-cmp-is-compatible-with-the-iab-gdpr-consent-framework).
+* Remove deprecated callbacks `onRewardedAdVideoStarted()` and `onRewardedAdVideoCompleted()`.
+
+## 5.6.2.1
+* Move `updateUserConsent()` call after `Ogury.start(...)`.
+
+## 5.6.2.0
+* Certified with OguryPresage SDK 5.6.2.
+
+## 5.6.1.0
+* Certified with OguryPresage SDK 5.6.1.
+
+## 5.6.0.0
+* Certified with OguryPresage SDK 5.6.0.
+* Remove the `getPrivacySetting()` function and call privacy methods directly.
+* Now requires MAX SDK version 9.14.0 or higher.
+
 ## 5.5.0.2
 * Add bidding support for rewarded, banner, and MREC ads.
 
@@ -89,7 +124,7 @@
 
 ## 4.3.6.1
 * Return the correct SDK version.
-* Using `Ogury-Presage` as the package naming convention. 
+* Using `Ogury-Presage` as the package naming convention.
 
 ## 4.3.6.0
 * Initial commit.
