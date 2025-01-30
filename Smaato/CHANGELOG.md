@@ -1,5 +1,66 @@
 # Changelog
 
+## 22.7.1.2
+* Introduced `verification.properties` to facilitate adapter ownership verification with Google SDK console.
+
+## 22.7.1.1
+* Gracefully fail interstitial ad display if `Activity` context is null.
+* Annotated all `Activity` parameters with `@Nullable` to better avoid potential NPEs.
+
+## 22.7.1.0
+* Certified with Smaato SDK 22.7.1.
+
+## 22.7.0.1
+* Requires minimum AppLovin MAX SDK version be 13.0.0.
+* Removed support for COPPA.
+* Remove deprecated native API usages.
+
+## 22.7.0.0
+* Certified with Smaato SDK 22.7.0.
+
+## 22.6.3.0
+* Certified with Smaato SDK 22.6.3.
+
+## 22.6.2.0
+* Certified with Smaato SDK 22.6.2.
+
+## 22.6.1.0
+* Certified with Smaato SDK 22.6.1.
+* Remove deprecated callbacks `onRewardedAdVideoStarted()` and `onRewardedAdVideoCompleted()`.
+
+## 22.6.0.0
+* Certified with Smaato SDK 22.6.0.
+
+## 22.5.1.0
+* Certified with Smaato SDK 22.5.1.
+* Improve error handling.
+
+## 22.5.0.0
+* Certified with Smaato SDK 22.5.0.
+
+## 22.4.0.0
+* Certified with Smaato SDK 22.4.0.
+
+## 22.3.2.0
+* Certified with Smaato SDK 22.3.2.
+
+## 22.3.1.0
+* Certified with Smaato SDK 22.3.1.
+
+## 22.3.0.0
+* Certified with Smaato SDK 22.3.0.
+
+## 22.2.0.0
+* Certified with Smaato SDK 22.2.0.
+
+## 22.1.2.0
+* Certified with Smaato SDK 22.1.2.
+
+## 22.1.1.0
+* Certified with Smaato SDK 22.1.1.
+* Remove the `getPrivacySetting()` function and call privacy methods directly.
+* Now requires MAX SDK version 9.14.0 or higher.
+
 ## 22.1.0.1
 * Add support for native ad view ads.
 
