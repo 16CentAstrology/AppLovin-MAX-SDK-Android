@@ -35,6 +35,7 @@ import com.mobilefuse.sdk.MobileFuseInterstitialAd;
 import com.mobilefuse.sdk.MobileFuseNativeAd;
 import com.mobilefuse.sdk.MobileFuseRewardedAd;
 import com.mobilefuse.sdk.MobileFuseSettings;
+import com.mobilefuse.sdk.SdkInitListener;
 import com.mobilefuse.sdk.internal.MobileFuseBiddingTokenProvider;
 import com.mobilefuse.sdk.internal.MobileFuseBiddingTokenRequest;
 import com.mobilefuse.sdk.internal.TokenGeneratorListener;
@@ -42,6 +43,7 @@ import com.mobilefuse.sdk.privacy.MobileFusePrivacyPreferences;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -50,6 +52,9 @@ public class MobileFuseMediationAdapter
         extends MediationAdapterBase
         implements MaxSignalProvider, MaxInterstitialAdapter, MaxRewardedAdapter, MaxAdViewAdapter
 {
+    private static final AtomicBoolean        initialized = new AtomicBoolean();
+    private static       InitializationStatus initializationStatus;
+
     private MobileFuseInterstitialAd interstitialAd;
     private MobileFuseRewardedAd     rewardedAd;
     private MobileFuseBannerAd       adView;
@@ -58,10 +63,39 @@ public class MobileFuseMediationAdapter
     public MobileFuseMediationAdapter(final AppLovinSdk sdk) { super( sdk ); }
 
     @Override
-    public void initialize(final MaxAdapterInitializationParameters parameters, final Activity activity, final OnCompletionListener onCompletionListener)
+    public void initialize(final MaxAdapterInitializationParameters parameters, @Nullable final Activity activity, final OnCompletionListener onCompletionListener)
     {
-        MobileFuseSettings.setTestMode( parameters.isTesting() );
-        onCompletionListener.onCompletion( InitializationStatus.INITIALIZED_UNKNOWN, null );
+        if ( initialized.compareAndSet( false, true ) )
+        {
+            log( "Initializing MobileFuse SDK" );
+            initializationStatus = InitializationStatus.INITIALIZING;
+
+            MobileFuseSettings.setTestMode( parameters.isTesting() );
+            MobileFuseSettings.setSdkAdapter( "applovin_bidding", getAdapterVersion() );
+
+            MobileFuse.init( new SdkInitListener()
+            {
+                @Override
+                public void onInitSuccess()
+                {
+                    log( "MobileFuse SDK initialized" );
+                    initializationStatus = InitializationStatus.INITIALIZED_SUCCESS;
+                    onCompletionListener.onCompletion( initializationStatus, null );
+                }
+
+                @Override
+                public void onInitError()
+                {
+                    log( "MobileFuse SDK failed to initialize" );
+                    initializationStatus = InitializationStatus.INITIALIZED_FAILURE;
+                    onCompletionListener.onCompletion( initializationStatus, null );
+                }
+            } );
+        }
+        else
+        {
+            onCompletionListener.onCompletion( initializationStatus, null );
+        }
     }
 
     @Override
@@ -101,7 +135,7 @@ public class MobileFuseMediationAdapter
         if ( nativeAd != null )
         {
             nativeAd.unregisterViews();
-            nativeAd.setListener( null );
+            nativeAd.setAdListener( null );
             nativeAd = null;
         }
     }
@@ -109,7 +143,7 @@ public class MobileFuseMediationAdapter
     //region MAX Signal Provider Methods
 
     @Override
-    public void collectSignal(final MaxAdapterSignalCollectionParameters parameters, final @Nullable Activity activity, final MaxSignalCollectionListener callback)
+    public void collectSignal(final MaxAdapterSignalCollectionParameters parameters, @Nullable final Activity activity, final MaxSignalCollectionListener callback)
     {
         log( "Collecting signal..." );
 
@@ -139,7 +173,7 @@ public class MobileFuseMediationAdapter
     //region MAX Interstitial Adapter Methods
 
     @Override
-    public void loadInterstitialAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxInterstitialAdapterListener listener)
+    public void loadInterstitialAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxInterstitialAdapterListener listener)
     {
         String placementId = parameters.getThirdPartyAdPlacementId();
 
@@ -153,7 +187,7 @@ public class MobileFuseMediationAdapter
     }
 
     @Override
-    public void showInterstitialAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxInterstitialAdapterListener listener)
+    public void showInterstitialAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxInterstitialAdapterListener listener)
     {
         log( "Showing interstitial ad: " + parameters.getThirdPartyAdPlacementId() );
 
@@ -173,7 +207,7 @@ public class MobileFuseMediationAdapter
     //region MAX Rewarded Adapter Methods
 
     @Override
-    public void loadRewardedAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxRewardedAdapterListener listener)
+    public void loadRewardedAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxRewardedAdapterListener listener)
     {
         String placementId = parameters.getThirdPartyAdPlacementId();
 
@@ -187,7 +221,7 @@ public class MobileFuseMediationAdapter
     }
 
     @Override
-    public void showRewardedAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxRewardedAdapterListener listener)
+    public void showRewardedAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxRewardedAdapterListener listener)
     {
         log( "Showing rewarded ad: " + parameters.getThirdPartyAdPlacementId() );
 
@@ -209,7 +243,7 @@ public class MobileFuseMediationAdapter
     //region MAX Ad View Adapter Methods
 
     @Override
-    public void loadAdViewAd(final MaxAdapterResponseParameters parameters, final MaxAdFormat adFormat, final Activity activity, final MaxAdViewAdapterListener listener)
+    public void loadAdViewAd(final MaxAdapterResponseParameters parameters, final MaxAdFormat adFormat, @Nullable final Activity activity, final MaxAdViewAdapterListener listener)
     {
         final String placementId = parameters.getThirdPartyAdPlacementId();
         final boolean isNative = parameters.getServerParameters().getBoolean( "is_native" );
@@ -221,7 +255,7 @@ public class MobileFuseMediationAdapter
         if ( isNative )
         {
             nativeAd = new MobileFuseNativeAd( getContext( activity ), placementId );
-            nativeAd.setListener( new NativeAdViewListener( adFormat, parameters, listener ) );
+            nativeAd.setAdListener( new NativeAdViewListener( adFormat, parameters, listener ) );
             nativeAd.loadAdFromBiddingToken( parameters.getBidResponse() );
         }
         else
@@ -239,7 +273,7 @@ public class MobileFuseMediationAdapter
     //region MAX Native Ad Adapter Methods
 
     @Override
-    public void loadNativeAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxNativeAdAdapterListener listener)
+    public void loadNativeAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxNativeAdAdapterListener listener)
     {
         final String placementId = parameters.getThirdPartyAdPlacementId();
 
@@ -248,7 +282,7 @@ public class MobileFuseMediationAdapter
         updatePrivacyPreferences( parameters );
 
         nativeAd = new MobileFuseNativeAd( getContext( activity ), placementId );
-        nativeAd.setListener( new NativeAdListener( parameters, listener ) );
+        nativeAd.setAdListener( new NativeAdListener( parameters, listener ) );
         nativeAd.loadAdFromBiddingToken( parameters.getBidResponse() );
     }
 
@@ -292,18 +326,6 @@ public class MobileFuseMediationAdapter
             privacyPreferencesBuilder.setUsPrivacyConsentString( "1---" );
         }
 
-        Boolean isAgeRestrictedUser = parameters.isAgeRestrictedUser();
-        if ( isAgeRestrictedUser != null )
-        {
-            privacyPreferencesBuilder.setSubjectToCoppa( isAgeRestrictedUser );
-        }
-
-        String consentString = parameters.getConsentString();
-        if ( consentString != null )
-        {
-            privacyPreferencesBuilder.setIabConsentString( consentString );
-        }
-
         MobileFuse.setPrivacyPreferences( privacyPreferencesBuilder.build() );
     }
 
@@ -329,7 +351,7 @@ public class MobileFuseMediationAdapter
 
     private List<View> getClickableViews(final MaxNativeAdView maxNativeAdView)
     {
-        List<View> clickableViews = new ArrayList<View>( 6 );
+        final List<View> clickableViews = new ArrayList<>( 6 );
         if ( maxNativeAdView.getTitleTextView() != null ) clickableViews.add( maxNativeAdView.getTitleTextView() );
         if ( maxNativeAdView.getAdvertiserTextView() != null ) clickableViews.add( maxNativeAdView.getAdvertiserTextView() );
         if ( maxNativeAdView.getBodyTextView() != null ) clickableViews.add( maxNativeAdView.getBodyTextView() );
@@ -340,7 +362,7 @@ public class MobileFuseMediationAdapter
         return clickableViews;
     }
 
-    private Context getContext(@Nullable Activity activity)
+    private Context getContext(@Nullable final Activity activity)
     {
         return ( activity != null ) ? activity.getApplicationContext() : getApplicationContext();
     }
@@ -784,12 +806,6 @@ public class MobileFuseMediationAdapter
         public MaxMobileFuseNativeAd(final Builder builder)
         {
             super( builder );
-        }
-
-        @Override
-        public void prepareViewForInteraction(final MaxNativeAdView maxNativeAdView)
-        {
-            prepareForInteraction( MobileFuseMediationAdapter.this.getClickableViews( maxNativeAdView ), maxNativeAdView );
         }
 
         @Override

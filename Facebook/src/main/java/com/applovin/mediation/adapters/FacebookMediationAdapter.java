@@ -17,13 +17,11 @@ import com.applovin.mediation.adapter.MaxAdViewAdapter;
 import com.applovin.mediation.adapter.MaxAdapterError;
 import com.applovin.mediation.adapter.MaxInterstitialAdapter;
 import com.applovin.mediation.adapter.MaxRewardedAdapter;
-import com.applovin.mediation.adapter.MaxRewardedInterstitialAdapter;
 import com.applovin.mediation.adapter.MaxSignalProvider;
 import com.applovin.mediation.adapter.listeners.MaxAdViewAdapterListener;
 import com.applovin.mediation.adapter.listeners.MaxInterstitialAdapterListener;
 import com.applovin.mediation.adapter.listeners.MaxNativeAdAdapterListener;
 import com.applovin.mediation.adapter.listeners.MaxRewardedAdapterListener;
-import com.applovin.mediation.adapter.listeners.MaxRewardedInterstitialAdapterListener;
 import com.applovin.mediation.adapter.listeners.MaxSignalCollectionListener;
 import com.applovin.mediation.adapter.parameters.MaxAdapterInitializationParameters;
 import com.applovin.mediation.adapter.parameters.MaxAdapterParameters;
@@ -35,7 +33,6 @@ import com.applovin.sdk.AppLovinSdk;
 import com.applovin.sdk.AppLovinSdkUtils;
 import com.facebook.ads.Ad;
 import com.facebook.ads.AdError;
-import com.facebook.ads.AdExperienceType;
 import com.facebook.ads.AdListener;
 import com.facebook.ads.AdOptionsView;
 import com.facebook.ads.AdSettings;
@@ -55,7 +52,6 @@ import com.facebook.ads.RewardedVideoAd;
 import com.facebook.ads.RewardedVideoAdExtendedListener;
 
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -73,7 +69,7 @@ import static com.applovin.sdk.AppLovinSdkUtils.runOnUiThread;
  */
 public class FacebookMediationAdapter
         extends MediationAdapterBase
-        implements MaxInterstitialAdapter, MaxRewardedInterstitialAdapter, MaxRewardedAdapter, MaxAdViewAdapter, MaxSignalProvider /* MaxNativeAdAdapter */
+        implements MaxInterstitialAdapter, MaxRewardedAdapter, MaxAdViewAdapter, MaxSignalProvider /* MaxNativeAdAdapter */
 {
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean();
 
@@ -84,11 +80,9 @@ public class FacebookMediationAdapter
     private NativeBannerAd  mNativeBannerAd;
     private InterstitialAd  mInterstitialAd;
     private RewardedVideoAd mRewardedVideoAd;
-    private RewardedVideoAd mRewardedInterAd;
 
-    private final AtomicBoolean onInterstitialAdHiddenCalled     = new AtomicBoolean();
-    private final AtomicBoolean onRewardedAdVideoCompletedCalled = new AtomicBoolean();
-    private final AtomicBoolean onRewardedAdHiddenCalled         = new AtomicBoolean();
+    private final AtomicBoolean onInterstitialAdHiddenCalled = new AtomicBoolean();
+    private final AtomicBoolean onRewardedAdHiddenCalled     = new AtomicBoolean();
 
     // Explicit default constructor declaration
     public FacebookMediationAdapter(final AppLovinSdk sdk)
@@ -97,7 +91,7 @@ public class FacebookMediationAdapter
     }
 
     @Override
-    public void initialize(final MaxAdapterInitializationParameters parameters, final Activity activity, final OnCompletionListener onCompletionListener)
+    public void initialize(final MaxAdapterInitializationParameters parameters, @Nullable final Activity activity, final OnCompletionListener onCompletionListener)
     {
         // Update ad settings
         updateAdSettings( parameters );
@@ -144,8 +138,6 @@ public class FacebookMediationAdapter
         }
         else
         {
-            log( "Facebook attempted initialization already - marking initialization as completed" );
-
             onCompletionListener.onCompletion( sStatus, null );
         }
     }
@@ -177,12 +169,6 @@ public class FacebookMediationAdapter
             mRewardedVideoAd = null;
         }
 
-        if ( mRewardedInterAd != null )
-        {
-            mRewardedInterAd.destroy();
-            mRewardedInterAd = null;
-        }
-
         if ( mAdView != null )
         {
             mAdView.destroy();
@@ -205,7 +191,7 @@ public class FacebookMediationAdapter
     }
 
     @Override
-    public void collectSignal(final MaxAdapterSignalCollectionParameters parameters, final Activity activity, final MaxSignalCollectionListener callback)
+    public void collectSignal(final MaxAdapterSignalCollectionParameters parameters, @Nullable final Activity activity, final MaxSignalCollectionListener callback)
     {
         log( "Collecting signal..." );
 
@@ -217,7 +203,7 @@ public class FacebookMediationAdapter
     }
 
     @Override
-    public void loadInterstitialAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxInterstitialAdapterListener listener)
+    public void loadInterstitialAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxInterstitialAdapterListener listener)
     {
         final String placementId = parameters.getThirdPartyAdPlacementId();
 
@@ -225,7 +211,7 @@ public class FacebookMediationAdapter
 
         updateAdSettings( parameters );
 
-        mInterstitialAd = new InterstitialAd( activity.getApplicationContext(), placementId );
+        mInterstitialAd = new InterstitialAd( getContext( activity ), placementId );
         InterstitialAd.InterstitialAdLoadConfigBuilder adLoadConfigBuilder = mInterstitialAd.buildLoadAdConfig().withAdListener( new InterstitialAdListener( listener ) );
 
         if ( mInterstitialAd.isAdLoaded() && !mInterstitialAd.isAdInvalidated() )
@@ -241,7 +227,7 @@ public class FacebookMediationAdapter
     }
 
     @Override
-    public void showInterstitialAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxInterstitialAdapterListener listener)
+    public void showInterstitialAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxInterstitialAdapterListener listener)
     {
         log( "Showing interstitial ad: " + parameters.getThirdPartyAdPlacementId() + "..." );
 
@@ -267,149 +253,7 @@ public class FacebookMediationAdapter
     }
 
     @Override
-    public void loadRewardedInterstitialAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxRewardedInterstitialAdapterListener listener)
-    {
-        final String placementId = parameters.getThirdPartyAdPlacementId();
-
-        log( "Loading rewarded interstitial: " + placementId + "..." );
-
-        updateAdSettings( parameters );
-
-        mRewardedInterAd = new RewardedVideoAd( activity.getApplicationContext(), placementId );
-        RewardedVideoAd.RewardedVideoAdLoadConfigBuilder adLoadConfigBuilder = mRewardedInterAd.buildLoadAdConfig()
-                .withAdExperience( AdExperienceType.AD_EXPERIENCE_TYPE_REWARDED_INTERSTITIAL )
-                .withAdListener( new RewardedVideoAdExtendedListener()
-                {
-                    private boolean hasGrantedReward;
-
-                    @Override
-                    public void onAdLoaded(final Ad ad)
-                    {
-                        log( "Rewarded interstitial ad loaded: " + placementId );
-                        listener.onRewardedInterstitialAdLoaded();
-                    }
-
-                    @Override
-                    public void onError(final Ad ad, final AdError adError)
-                    {
-                        MaxAdapterError adapterError = toMaxError( adError );
-                        log( "Rewarded interstitial ad (" + placementId + ") failed to load with error: " + adapterError );
-                        listener.onRewardedInterstitialAdLoadFailed( adapterError );
-                    }
-
-                    @Override
-                    public void onAdClicked(final Ad ad)
-                    {
-                        log( "Rewarded interstitial ad clicked: " + placementId );
-                        listener.onRewardedInterstitialAdClicked();
-                    }
-
-                    @Override
-                    public void onRewardedVideoClosed()
-                    {
-                        if ( onRewardedAdHiddenCalled.compareAndSet( false, true ) )
-                        {
-                            if ( hasGrantedReward || shouldAlwaysRewardUser() )
-                            {
-                                final MaxReward reward = getReward();
-                                log( "Rewarded user with reward: " + reward );
-                                listener.onUserRewarded( reward );
-                            }
-
-                            log( "Rewarded interstitial ad hidden: " + placementId );
-                            listener.onRewardedInterstitialAdHidden();
-                        }
-                        else
-                        {
-                            log( "Rewarded interstitial ad hidden: " + placementId );
-                        }
-                    }
-
-                    @Override
-                    public void onRewardedVideoCompleted()
-                    {
-                        log( "Rewarded interstitial ad video completed: " + placementId );
-
-                        if ( onRewardedAdVideoCompletedCalled.compareAndSet( false, true ) )
-                        {
-                            listener.onRewardedInterstitialAdVideoCompleted();
-
-                            hasGrantedReward = true;
-                        }
-                    }
-
-                    @Override
-                    public void onLoggingImpression(final Ad ad)
-                    {
-                        log( "Rewarded interstitial ad logging impression: " + placementId );
-
-                        listener.onRewardedInterstitialAdDisplayed();
-                        listener.onRewardedInterstitialAdVideoStarted();
-                    }
-
-                    @Override
-                    public void onRewardedVideoActivityDestroyed()
-                    {
-                        log( "Rewarded interstitial ad Activity destroyed: " + placementId );
-
-                        //
-                        // We will not reward the user if Activity is destroyed - this may be due to launching from app icon and having the `android:launchMode="singleTask"` flag
-                        //
-
-                        if ( onRewardedAdVideoCompletedCalled.compareAndSet( false, true ) )
-                        {
-                            listener.onRewardedInterstitialAdVideoCompleted();
-                        }
-
-                        if ( onRewardedAdHiddenCalled.compareAndSet( false, true ) )
-                        {
-                            listener.onRewardedInterstitialAdHidden();
-                        }
-                    }
-                } );
-
-        if ( mRewardedInterAd.isAdLoaded() && !mRewardedInterAd.isAdInvalidated() )
-        {
-            log( "A rewarded interstitial ad has been loaded already" );
-            listener.onRewardedInterstitialAdLoaded();
-        }
-        else
-        {
-            log( "Loading bidding rewarded interstitial ad..." );
-            mRewardedInterAd.loadAd( adLoadConfigBuilder.withBid( parameters.getBidResponse() ).build() );
-        }
-    }
-
-    @Override
-    public void showRewardedInterstitialAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxRewardedInterstitialAdapterListener listener)
-    {
-        log( "Showing rewarded interstitial ad: " + parameters.getThirdPartyAdPlacementId() + "..." );
-
-        if ( mRewardedInterAd != null && mRewardedInterAd.isAdLoaded() )
-        {
-            // Check if ad is already expired or invalidated, and do not show ad if that is the case. You will not get paid to show an invalidated ad.
-            if ( !mRewardedInterAd.isAdInvalidated() )
-            {
-                // Configure userReward from server.
-                configureReward( parameters );
-
-                mRewardedInterAd.show();
-            }
-            else
-            {
-                log( "Unable to show rewarded interstitial ad - ad expired..." );
-                listener.onRewardedInterstitialAdDisplayFailed( MaxAdapterError.AD_EXPIRED );
-            }
-        }
-        else
-        {
-            log( "Unable to show rewarded interstitial ad - no ad loaded..." );
-            listener.onRewardedInterstitialAdDisplayFailed( new MaxAdapterError( -4205, "Ad Display Failed", 0, "Rewarded Interstitial ad not ready" ) );
-        }
-    }
-
-    @Override
-    public void loadRewardedAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxRewardedAdapterListener listener)
+    public void loadRewardedAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxRewardedAdapterListener listener)
     {
         final String placementId = parameters.getThirdPartyAdPlacementId();
 
@@ -417,7 +261,7 @@ public class FacebookMediationAdapter
 
         updateAdSettings( parameters );
 
-        mRewardedVideoAd = new RewardedVideoAd( activity.getApplicationContext(), placementId );
+        mRewardedVideoAd = new RewardedVideoAd( getContext( activity ), placementId );
         RewardedVideoAd.RewardedVideoAdLoadConfigBuilder adLoadConfigBuilder = mRewardedVideoAd.buildLoadAdConfig().withAdListener( new RewardedAdListener( listener ) );
 
         if ( mRewardedVideoAd.isAdLoaded() && !mRewardedVideoAd.isAdInvalidated() )
@@ -433,7 +277,7 @@ public class FacebookMediationAdapter
     }
 
     @Override
-    public void showRewardedAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxRewardedAdapterListener listener)
+    public void showRewardedAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxRewardedAdapterListener listener)
     {
         log( "Showing rewarded ad: " + parameters.getThirdPartyAdPlacementId() + "..." );
 
@@ -461,7 +305,7 @@ public class FacebookMediationAdapter
     }
 
     @Override
-    public void loadAdViewAd(final MaxAdapterResponseParameters parameters, final MaxAdFormat adFormat, final Activity activity, final MaxAdViewAdapterListener listener)
+    public void loadAdViewAd(final MaxAdapterResponseParameters parameters, final MaxAdFormat adFormat, @Nullable final Activity activity, final MaxAdViewAdapterListener listener)
     {
         final String placementId = parameters.getThirdPartyAdPlacementId();
         final boolean isNative = parameters.getServerParameters().getBoolean( "is_native" );
@@ -490,7 +334,7 @@ public class FacebookMediationAdapter
     }
 
     @Override
-    public void loadNativeAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxNativeAdAdapterListener listener)
+    public void loadNativeAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxNativeAdAdapterListener listener)
     {
         final Bundle serverParameters = parameters.getServerParameters();
         final boolean isNativeBanner = BundleUtils.getBoolean( "is_native_banner", serverParameters );
@@ -549,14 +393,6 @@ public class FacebookMediationAdapter
             AdSettings.setVideoAutoplay( videoAutoplay );
         }
 
-        // NOTE: Adapter / mediated SDK has support for COPPA, but is not approved by Play Store and therefore will be filtered on COPPA traffic
-        // https://support.google.com/googleplay/android-developer/answer/9283445?hl=en
-        Boolean isAgeRestrictedUser = getPrivacySetting( "isAgeRestrictedUser", parameters );
-        if ( isAgeRestrictedUser != null )
-        {
-            AdSettings.setMixedAudience( isAgeRestrictedUser );
-        }
-
         final String testDevicesString = serverParameters.getString( "test_device_ids", null );
         if ( !TextUtils.isEmpty( testDevicesString ) )
         {
@@ -566,22 +402,6 @@ public class FacebookMediationAdapter
 
         // Update mediation service
         AdSettings.setMediationService( getMediationIdentifier() );
-    }
-
-    private Boolean getPrivacySetting(final String privacySetting, final MaxAdapterParameters parameters)
-    {
-        try
-        {
-            // Use reflection because compiled adapters have trouble fetching `boolean` from old SDKs and `Boolean` from new SDKs (above 9.14.0)
-            Class<?> parametersClass = parameters.getClass();
-            Method privacyMethod = parametersClass.getMethod( privacySetting );
-            return (Boolean) privacyMethod.invoke( parameters );
-        }
-        catch ( Exception exception )
-        {
-            log( "Error getting privacy setting " + privacySetting + " with exception: ", exception );
-            return ( AppLovinSdk.VERSION_CODE >= 9140000 ) ? null : false;
-        }
     }
 
     private static MaxAdapterError toMaxError(final AdError facebookError)
@@ -646,19 +466,12 @@ public class FacebookMediationAdapter
         return "APPLOVIN_" + AppLovinSdk.VERSION + ":" + getAdapterVersion();
     }
 
-    private MaxNativeAdView createMaxNativeAdView(final MaxNativeAd maxNativeAd, final String templateName, final Activity activity)
+    private MaxNativeAdView createMaxNativeAdView(final MaxNativeAd maxNativeAd, final String templateName, @Nullable final Activity activity)
     {
-        if ( AppLovinSdk.VERSION_CODE >= 11_01_00_00 )
-        {
-            return new MaxNativeAdView( maxNativeAd, templateName, getApplicationContext() );
-        }
-        else
-        {
-            return new MaxNativeAdView( maxNativeAd, templateName, activity );
-        }
+        return new MaxNativeAdView( maxNativeAd, templateName, getApplicationContext() );
     }
 
-    private Context getContext(@Nullable Activity activity)
+    private Context getContext(@Nullable final Activity activity)
     {
         // NOTE: `activity` can only be null in 11.1.0+, and `getApplicationContext()` is introduced in 11.1.0
         return ( activity != null ) ? activity.getApplicationContext() : getApplicationContext();
@@ -802,12 +615,7 @@ public class FacebookMediationAdapter
         {
             log( "Rewarded ad video completed" );
 
-            if ( onRewardedAdVideoCompletedCalled.compareAndSet( false, true ) )
-            {
-                listener.onRewardedAdVideoCompleted();
-
-                hasGrantedReward = true;
-            }
+            hasGrantedReward = true;
         }
 
         @Override
@@ -816,7 +624,6 @@ public class FacebookMediationAdapter
             log( "Rewarded ad logging impression: " + ad.getPlacementId() );
 
             listener.onRewardedAdDisplayed();
-            listener.onRewardedAdVideoStarted();
         }
 
         @Override
@@ -827,11 +634,6 @@ public class FacebookMediationAdapter
             //
             // We will not reward the user if Activity is destroyed - this may be due to launching from app icon and having the `android:launchMode="singleTask"` flag
             //
-
-            if ( onRewardedAdVideoCompletedCalled.compareAndSet( false, true ) )
-            {
-                listener.onRewardedAdVideoCompleted();
-            }
 
             if ( onRewardedAdHiddenCalled.compareAndSet( false, true ) )
             {
@@ -893,7 +695,7 @@ public class FacebookMediationAdapter
         final MaxAdFormat              adFormat;
         final MaxAdViewAdapterListener listener;
 
-        NativeAdViewListener(final Bundle serverParameters, final MaxAdFormat adFormat, final Activity activity, final MaxAdViewAdapterListener listener)
+        NativeAdViewListener(final Bundle serverParameters, final MaxAdFormat adFormat, @Nullable final Activity activity, final MaxAdViewAdapterListener listener)
         {
             this.serverParameters = serverParameters;
             this.activityRef = new WeakReference<>( activity );
@@ -928,14 +730,9 @@ public class FacebookMediationAdapter
                 View mrecView = NativeAdView.render( getContext( activityRef.get() ), mNativeAd );
                 listener.onAdViewAdLoaded( mrecView );
             }
-            else if ( AppLovinSdk.VERSION_CODE >= 9140000 ) // Native banners and leaders use APIs in newer SDKs
-            {
-                renderNativeAdView();
-            }
             else
             {
-                log( "Native " + adFormat.getLabel() + " failed to load: AppLovin SDK version must be at least 9.14.0" );
-                listener.onAdViewAdLoadFailed( MaxAdapterError.INVALID_CONFIGURATION );
+                renderNativeAdView();
             }
         }
 
@@ -988,8 +785,8 @@ public class FacebookMediationAdapter
                             .setBody( mNativeAd.getAdBodyText() )
                             .setCallToAction( mNativeAd.getAdCallToAction() )
                             .setIconView( iconView )
-                            .setMediaView( mediaView )
                             .setOptionsView( new AdOptionsView( context, mNativeAd, null ) )
+                            .setMediaView( mediaView )
                             .build();
 
                     // Backend will pass down `vertical` as the template to indicate using a vertical native template
@@ -997,11 +794,6 @@ public class FacebookMediationAdapter
                     final String templateName = BundleUtils.getString( "template", "", serverParameters );
                     if ( templateName.contains( "vertical" ) )
                     {
-                        if ( AppLovinSdk.VERSION_CODE < 9140500 )
-                        {
-                            log( "Vertical native banners are only supported on MAX SDK 9.14.5 and above. Default native template will be used." );
-                        }
-
                         if ( templateName.equals( "vertical" ) )
                         {
                             String verticalTemplateName = ( adFormat == MaxAdFormat.LEADER ) ? "vertical_leader_template" : "vertical_media_banner_template";
@@ -1012,12 +804,6 @@ public class FacebookMediationAdapter
                             maxNativeAdView = createMaxNativeAdView( maxNativeAd, templateName, activity );
                         }
                     }
-                    else if ( AppLovinSdk.VERSION_CODE < 9140500 )
-                    {
-                        maxNativeAdView = createMaxNativeAdView( maxNativeAd,
-                                                                 AppLovinSdkUtils.isValidString( templateName ) ? templateName : "no_body_banner_template",
-                                                                 activity );
-                    }
                     else
                     {
                         maxNativeAdView = createMaxNativeAdView( maxNativeAd,
@@ -1025,24 +811,10 @@ public class FacebookMediationAdapter
                                                                  activity );
                     }
 
-                    final List<View> clickableViews = new ArrayList<>();
-                    if ( maxNativeAd.getIconView() != null && maxNativeAdView.getIconContentView() != null )
-                    {
-                        clickableViews.add( maxNativeAdView.getIconContentView() );
-                    }
-
-                    final View mediaContentView = ( AppLovinSdk.VERSION_CODE >= 11000000 ) ? maxNativeAdView.getMediaContentViewGroup() : maxNativeAdView.getMediaContentView();
-                    if ( maxNativeAd.getMediaView() != null && mediaContentView != null )
-                    {
-                        clickableViews.add( mediaContentView );
-                    }
+                    final List<View> clickableViews = new ArrayList<>( 6 );
                     if ( AppLovinSdkUtils.isValidString( maxNativeAd.getTitle() ) && maxNativeAdView.getTitleTextView() != null )
                     {
                         clickableViews.add( maxNativeAdView.getTitleTextView() );
-                    }
-                    if ( AppLovinSdkUtils.isValidString( maxNativeAd.getCallToAction() ) && maxNativeAdView.getCallToActionButton() != null )
-                    {
-                        clickableViews.add( maxNativeAdView.getCallToActionButton() );
                     }
                     if ( AppLovinSdkUtils.isValidString( maxNativeAd.getAdvertiser() ) && maxNativeAdView.getAdvertiserTextView() != null )
                     {
@@ -1051,6 +823,20 @@ public class FacebookMediationAdapter
                     if ( AppLovinSdkUtils.isValidString( maxNativeAd.getBody() ) && maxNativeAdView.getBodyTextView() != null )
                     {
                         clickableViews.add( maxNativeAdView.getBodyTextView() );
+                    }
+                    if ( AppLovinSdkUtils.isValidString( maxNativeAd.getCallToAction() ) && maxNativeAdView.getCallToActionButton() != null )
+                    {
+                        clickableViews.add( maxNativeAdView.getCallToActionButton() );
+                    }
+                    if ( maxNativeAd.getIconView() != null )
+                    {
+                        clickableViews.add( maxNativeAd.getIconView() );
+                    }
+
+                    final View mediaContentView = maxNativeAdView.getMediaContentViewGroup();
+                    if ( maxNativeAd.getMediaView() != null && mediaContentView != null )
+                    {
+                        clickableViews.add( mediaContentView );
                     }
 
                     mNativeAd.registerViewForInteraction( maxNativeAdView, mediaView, iconView, clickableViews );
@@ -1261,45 +1047,6 @@ public class FacebookMediationAdapter
         }
 
         @Override
-        public void prepareViewForInteraction(final MaxNativeAdView maxNativeAdView)
-        {
-            final List<View> clickableViews = new ArrayList<>();
-            if ( AppLovinSdkUtils.isValidString( getTitle() ) && maxNativeAdView.getTitleTextView() != null )
-            {
-                clickableViews.add( maxNativeAdView.getTitleTextView() );
-            }
-            if ( AppLovinSdkUtils.isValidString( getAdvertiser() ) && maxNativeAdView.getAdvertiserTextView() != null )
-            {
-                clickableViews.add( maxNativeAdView.getAdvertiserTextView() );
-            }
-            if ( AppLovinSdkUtils.isValidString( getBody() ) && maxNativeAdView.getBodyTextView() != null )
-            {
-                clickableViews.add( maxNativeAdView.getBodyTextView() );
-            }
-            if ( AppLovinSdkUtils.isValidString( getCallToAction() ) && maxNativeAdView.getCallToActionButton() != null )
-            {
-                clickableViews.add( maxNativeAdView.getCallToActionButton() );
-            }
-            if ( getIcon() != null && maxNativeAdView.getIconImageView() != null )
-            {
-                clickableViews.add( maxNativeAdView.getIconImageView() );
-            }
-            if ( getMediaView() != null && maxNativeAdView.getMediaContentViewGroup() != null )
-            {
-                clickableViews.add( maxNativeAdView.getMediaContentViewGroup() );
-            }
-
-            // To avoid `java.lang.IllegalArgumentException: Invalid set of clickable views` with size=0
-            if ( clickableViews.isEmpty() )
-            {
-                e( "No clickable views to prepare" );
-                return;
-            }
-
-            prepareForInteraction( clickableViews, maxNativeAdView );
-        }
-
-        // @Override
         public boolean prepareForInteraction(final List<View> clickableViews, final ViewGroup container)
         {
             final NativeAdBase nativeAd = ( mNativeAd != null ) ? mNativeAd : mNativeBannerAd;
@@ -1324,6 +1071,11 @@ public class FacebookMediationAdapter
                     iconImageView = (ImageView) clickableView;
                     break;
                 }
+            }
+
+            if ( getMediaView() != null )
+            {
+                clickableViews.add( getMediaView() );
             }
 
             if ( nativeAd instanceof NativeBannerAd )
