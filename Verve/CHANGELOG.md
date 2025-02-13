@@ -1,5 +1,49 @@
 # Changelog
 
+## 3.2.1.1
+* Introduced `verification.properties` to facilitate adapter ownership verification with Google SDK console.
+
+## 3.2.1.0
+* Certified with Verve SDK 3.2.1.
+* Removed redundant log output when initialization was already completed.
+
+## 3.2.0.0
+* Certified with Verve SDK 3.2.0.
+* Annotated all `Activity` parameters with `@Nullable` to better avoid potential NPEs.
+
+## 3.1.0.0
+* Certified with Verve SDK 3.1.0.
+
+## 3.0.4.1
+* Requires minimum AppLovin MAX SDK version be 13.0.0.
+* Removed support for COPPA.
+
+## 3.0.4.0
+* Certified with Verve SDK 3.0.4.
+
+## 3.0.2.0
+* Certified with Verve SDK 3.0.2.
+* Replace parameter type `Activity` with `Context` in `HyBidInterstitialAd()` and `HyBidRewardedAd()`.
+* Remove passing of `Activity` contexts into Verve APIs.
+
+## 3.0.0.0
+* Certified with Verve SDK 3.0.0.
+* Remove deprecated callbacks `onRewardedAdVideoStarted()` and `onRewardedAdVideoCompleted()`.
+* Remove updating mute state due to deprecation of `HyBid.setVideoAudioStatus( AudioState )`.
+
+## 2.21.1.0
+* Certified with Verve SDK 2.21.1.
+
+## 2.20.0.0
+* Certified with Verve SDK 2.20.0.
+
+## 2.19.0.0
+* Certified with Verve SDK 2.19.0.
+
+## 2.18.1.1
+* Add support for binary consent state as a fallback option if the TCFv2 GDPR consent string is not present in Shared Preferences.
+* Remove unnecessary MAX SDK version check.
+
 ## 2.18.1.0
 * Certified with Verve SDK 2.18.1.
 

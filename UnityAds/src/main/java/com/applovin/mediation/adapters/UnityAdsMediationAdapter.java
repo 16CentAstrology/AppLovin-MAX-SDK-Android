@@ -20,7 +20,6 @@ import com.applovin.mediation.adapter.parameters.MaxAdapterResponseParameters;
 import com.applovin.mediation.adapter.parameters.MaxAdapterSignalCollectionParameters;
 import com.applovin.mediation.adapters.unityads.BuildConfig;
 import com.applovin.sdk.AppLovinSdk;
-import com.applovin.sdk.AppLovinSdkConfiguration;
 import com.applovin.sdk.AppLovinSdkUtils;
 import com.unity3d.ads.IUnityAdsInitializationListener;
 import com.unity3d.ads.IUnityAdsLoadListener;
@@ -36,9 +35,10 @@ import com.unity3d.services.banners.BannerErrorInfo;
 import com.unity3d.services.banners.BannerView;
 import com.unity3d.services.banners.UnityBannerSize;
 
-import java.lang.reflect.Method;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import androidx.annotation.Nullable;
 
 /**
  * This is a mediation adapterWrapper for the Unity Ads SDK
@@ -57,7 +57,7 @@ public class UnityAdsMediationAdapter
     public UnityAdsMediationAdapter(final AppLovinSdk sdk) { super( sdk ); }
 
     @Override
-    public void initialize(final MaxAdapterInitializationParameters parameters, final Activity activity, final OnCompletionListener onCompletionListener)
+    public void initialize(final MaxAdapterInitializationParameters parameters, @Nullable final Activity activity, final OnCompletionListener onCompletionListener)
     {
         final Context context = getContext( activity );
 
@@ -99,7 +99,6 @@ public class UnityAdsMediationAdapter
         }
         else
         {
-            log( "UnityAds SDK already initialized" );
             onCompletionListener.onCompletion( initializationStatus, null );
         }
     }
@@ -127,11 +126,11 @@ public class UnityAdsMediationAdapter
     }
 
     @Override
-    public void collectSignal(final MaxAdapterSignalCollectionParameters parameters, final Activity activity, final MaxSignalCollectionListener callback)
+    public void collectSignal(final MaxAdapterSignalCollectionParameters parameters, @Nullable final Activity activity, final MaxSignalCollectionListener callback)
     {
         log( "Collecting signal..." );
 
-        updatePrivacyConsent( parameters, activity.getApplicationContext() );
+        updatePrivacyConsent( parameters, getContext( activity ) );
 
         UnityAds.getToken( new IUnityAdsTokenListener()
         {
@@ -145,12 +144,12 @@ public class UnityAdsMediationAdapter
     }
 
     @Override
-    public void loadInterstitialAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxInterstitialAdapterListener listener)
+    public void loadInterstitialAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxInterstitialAdapterListener listener)
     {
         String placementId = parameters.getThirdPartyAdPlacementId();
         log( "Loading " + ( AppLovinSdkUtils.isValidString( parameters.getBidResponse() ) ? "bidding " : "" ) + "interstitial ad for placement \"" + placementId + "\"..." );
 
-        updatePrivacyConsent( parameters, activity.getApplicationContext() );
+        updatePrivacyConsent( parameters, getContext( activity ) );
 
         // Every ad needs a random ID associated with each load and show
         biddingAdId = UUID.randomUUID().toString();
@@ -175,7 +174,7 @@ public class UnityAdsMediationAdapter
     }
 
     @Override
-    public void showInterstitialAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxInterstitialAdapterListener listener)
+    public void showInterstitialAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxInterstitialAdapterListener listener)
     {
         String placementId = parameters.getThirdPartyAdPlacementId();
         log( "Showing interstitial ad for placement \"" + placementId + "\"..." );
@@ -213,12 +212,12 @@ public class UnityAdsMediationAdapter
     }
 
     @Override
-    public void loadRewardedAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxRewardedAdapterListener listener)
+    public void loadRewardedAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxRewardedAdapterListener listener)
     {
         String placementId = parameters.getThirdPartyAdPlacementId();
         log( "Loading " + ( AppLovinSdkUtils.isValidString( parameters.getBidResponse() ) ? "bidding " : "" ) + "rewarded ad for placement \"" + placementId + "\"..." );
 
-        updatePrivacyConsent( parameters, activity.getApplicationContext() );
+        updatePrivacyConsent( parameters, getContext( activity ) );
 
         // Every ad needs a random ID associated with each load and show
         biddingAdId = UUID.randomUUID().toString();
@@ -243,7 +242,7 @@ public class UnityAdsMediationAdapter
     }
 
     @Override
-    public void showRewardedAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxRewardedAdapterListener listener)
+    public void showRewardedAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxRewardedAdapterListener listener)
     {
         String placementId = parameters.getThirdPartyAdPlacementId();
         log( "Showing rewarded ad for placement \"" + placementId + "\"..." );
@@ -265,7 +264,6 @@ public class UnityAdsMediationAdapter
             {
                 log( "Rewarded ad placement \"" + placementId + "\" displayed" );
                 listener.onRewardedAdDisplayed();
-                listener.onRewardedAdVideoStarted();
             }
 
             @Override
@@ -279,7 +277,7 @@ public class UnityAdsMediationAdapter
             public void onUnityAdsShowComplete(final String placementId, final UnityAds.UnityAdsShowCompletionState state)
             {
                 log( "Rewarded ad placement \"" + placementId + "\" hidden with completion state: " + state );
-                listener.onRewardedAdVideoCompleted();
+
                 if ( state == UnityAds.UnityAdsShowCompletionState.COMPLETED || shouldAlwaysRewardUser() )
                 {
                     listener.onUserRewarded( getReward() );
@@ -290,14 +288,14 @@ public class UnityAdsMediationAdapter
     }
 
     @Override
-    public void loadAdViewAd(final MaxAdapterResponseParameters parameters, final MaxAdFormat adFormat, final Activity activity, final MaxAdViewAdapterListener listener)
+    public void loadAdViewAd(final MaxAdapterResponseParameters parameters, final MaxAdFormat adFormat, @Nullable final Activity activity, final MaxAdViewAdapterListener listener)
     {
         String placementId = parameters.getThirdPartyAdPlacementId();
-        log( "Loading banner ad for placement \"" + placementId + "\"..." );
+        log( "Loading " + ( AppLovinSdkUtils.isValidString( parameters.getBidResponse() ) ? "bidding " : "" ) + adFormat.getLabel() + " ad for placement \"" + placementId + "\"..." );
 
         if ( activity == null )
         {
-            log( "Banner ad load failed: Activity is null" );
+            log( adFormat.getLabel() + " ad placement \"" + placementId + "\" load failed: Activity is null" );
 
             MaxAdapterError error = new MaxAdapterError( -5601, "Missing Activity" );
             listener.onAdViewAdLoadFailed( error );
@@ -305,7 +303,10 @@ public class UnityAdsMediationAdapter
             return;
         }
 
-        updatePrivacyConsent( parameters, activity.getApplicationContext() );
+        updatePrivacyConsent( parameters, getContext( activity ) );
+
+        // Every ad needs a random ID associated with each load and show
+        biddingAdId = UUID.randomUUID().toString();
 
         bannerView = new BannerView( activity, placementId, toUnityBannerSize( adFormat ) );
         bannerView.setListener( new BannerView.IListener()
@@ -313,32 +314,39 @@ public class UnityAdsMediationAdapter
             @Override
             public void onBannerLoaded(final BannerView bannerAdView)
             {
-                log( "Banner ad loaded" );
+                log( adFormat.getLabel() + " ad placement \"" + placementId + "\" loaded" );
                 listener.onAdViewAdLoaded( bannerAdView );
             }
 
             @Override
             public void onBannerFailedToLoad(final BannerView bannerAdView, final BannerErrorInfo errorInfo)
             {
-                log( "Banner ad failed to load" );
+                log( adFormat.getLabel() + " ad placement \"" + placementId + "\" failed to load" );
                 listener.onAdViewAdLoadFailed( toMaxError( errorInfo ) );
+            }
+
+            @Override
+            public void onBannerShown(final BannerView bannerAdView)
+            {
+                log( adFormat.getLabel() + " ad placement \"" + placementId + "\" shown" );
+                listener.onAdViewAdDisplayed();
             }
 
             @Override
             public void onBannerClick(final BannerView bannerAdView)
             {
-                log( "Banner ad clicked" );
+                log( adFormat.getLabel() + " ad placement \"" + placementId + "\" clicked" );
                 listener.onAdViewAdClicked();
             }
 
             @Override
             public void onBannerLeftApplication(final BannerView bannerView)
             {
-                log( "Banner ad left application" );
+                log( adFormat.getLabel() + " ad placement \"" + placementId + "\" left application" );
             }
         } );
 
-        bannerView.load();
+        bannerView.load( createAdLoadOptions( parameters ) );
     }
 
     private UnityAdsLoadOptions createAdLoadOptions(final MaxAdapterResponseParameters parameters)
@@ -379,6 +387,10 @@ public class UnityAdsMediationAdapter
         else if ( adFormat == MaxAdFormat.LEADER )
         {
             return new UnityBannerSize( 728, 90 );
+        }
+        else if ( adFormat == MaxAdFormat.MREC )
+        {
+            return new UnityBannerSize( 300, 250 );
         }
         else
         {
@@ -469,51 +481,25 @@ public class UnityAdsMediationAdapter
     {
         MetaData privacyMetaData = new MetaData( context );
 
-        Boolean hasUserConsent = getPrivacySetting( "hasUserConsent", parameters );
+        Boolean hasUserConsent = parameters.hasUserConsent();
         if ( hasUserConsent != null )
         {
             privacyMetaData.set( "gdpr.consent", hasUserConsent );
             privacyMetaData.commit();
         }
 
-        if ( AppLovinSdk.VERSION_CODE >= 91100 )
+        Boolean isDoNotSell = parameters.isDoNotSell();
+        if ( isDoNotSell != null ) // CCPA compliance - https://unityads.unity3d.com/help/legal/gdpr
         {
-            Boolean isDoNotSell = getPrivacySetting( "isDoNotSell", parameters );
-            if ( isDoNotSell != null ) // CCPA compliance - https://unityads.unity3d.com/help/legal/gdpr
-            {
-                privacyMetaData.set( "privacy.consent", !isDoNotSell ); // isDoNotSell means user has opted out and is equivalent to false.
-                privacyMetaData.commit();
-            }
+            privacyMetaData.set( "privacy.consent", !isDoNotSell ); // isDoNotSell means user has opted out and is equivalent to false.
+            privacyMetaData.commit();
         }
 
         privacyMetaData.set( "privacy.mode", "mixed" );
         privacyMetaData.commit();
-
-        Boolean isAgeRestrictedUser = getPrivacySetting( "isAgeRestrictedUser", parameters );
-        if ( isAgeRestrictedUser != null )
-        {
-            privacyMetaData.set( "user.nonbehavioral", isAgeRestrictedUser );
-            privacyMetaData.commit();
-        }
     }
 
-    private Boolean getPrivacySetting(final String privacySetting, final MaxAdapterParameters parameters)
-    {
-        try
-        {
-            // Use reflection because compiled adapters have trouble fetching `boolean` from old SDKs and `Boolean` from new SDKs (above 9.14.0)
-            Class<?> parametersClass = parameters.getClass();
-            Method privacyMethod = parametersClass.getMethod( privacySetting );
-            return (Boolean) privacyMethod.invoke( parameters );
-        }
-        catch ( Exception exception )
-        {
-            log( "Error getting privacy setting " + privacySetting + " with exception: ", exception );
-            return ( AppLovinSdk.VERSION_CODE >= 9140000 ) ? null : false;
-        }
-    }
-
-    private Context getContext(Activity activity)
+    private Context getContext(@Nullable final Activity activity)
     {
         // NOTE: `activity` can only be null in 11.1.0+, and `getApplicationContext()` is introduced in 11.1.0
         return ( activity != null ) ? activity.getApplicationContext() : getApplicationContext();
