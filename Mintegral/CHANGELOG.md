@@ -1,5 +1,185 @@
 # Changelog
 
+## 16.9.41.0
+* Certified with Mintegral SDK 16.9.41.
+
+## 16.9.31.2
+* Introduced `verification.properties` to facilitate adapter ownership verification with Google SDK console.
+
+## 16.9.31.1
+* Call `setConsentStatus(Context)` API when `hasUserConsent` is `null` to ensure that Mintegral's SDK is able to read the TCF string from device storage.
+* Update to use new initialization API.
+
+## 16.9.31.0
+* Certified with Mintegral SDK 16.9.31.
+
+## 16.9.21.0
+* Certified with Mintegral SDK 16.9.21.
+
+## 16.9.11.0
+* Certified with Mintegral SDK 16.9.11.
+
+## 16.8.91.0
+* Certified with Mintegral SDK 16.8.91.
+
+## 16.8.81.0
+* Certified with Mintegral SDK 16.8.81.
+
+## 16.8.71.0
+* Certified with Mintegral SDK 16.8.71.
+
+## 16.8.61.1
+* Add support for loading fullscreen ads without an `Activity` context.
+* Annotated all `Activity` parameters with `@Nullable` to better avoid potential NPEs.
+
+## 16.8.61.0
+* Certified with Mintegral SDK 16.8.61.
+
+## 16.8.51.2
+* Update to use new interstitial ad APIs.
+
+## 16.8.51.1
+* Requires minimum AppLovin MAX SDK version be 13.0.0.
+* Removed support for COPPA.
+* Remove deprecated native API usages.
+
+## 16.8.51.0
+* Certified with Mintegral SDK 16.8.51.
+
+## 16.8.41.0
+* Certified with Mintegral SDK 16.8.41.
+
+## 16.8.31.0
+* Certified with Mintegral SDK 16.8.31.
+
+## 16.8.21.0
+* Certified with Mintegral SDK 16.8.21.
+
+## 16.8.11.0
+* Certified with Mintegral SDK 16.8.11.
+
+## 16.7.91.0
+* Certified with Mintegral SDK 16.7.91.
+
+## 16.7.81.0
+* Certified with Mintegral SDK 16.7.81.
+
+## 16.7.71.0
+* Certified with Mintegral SDK 16.7.71.
+
+## 16.7.61.0
+* Certified with Mintegral SDK 16.7.61.
+
+## 16.7.51.0
+* Certified with Mintegral SDK 16.7.51.
+
+## 16.7.41.0
+* Certified with Mintegral SDK 16.7.41.
+
+## 16.7.31.0
+* Certified with Mintegral SDK 16.7.31.
+
+## 16.7.21.0
+* Certified with Mintegral SDK 16.7.21.
+
+## 16.7.11.0
+* Certified with Mintegral SDK 16.7.11.
+
+## 16.6.71.0
+* Certified with Mintegral SDK 16.6.71.
+* Remove deprecated callbacks `onRewardedAdVideoStarted()` and `onRewardedAdVideoCompleted()`.
+
+## 16.6.61.1
+* Add support for app open ads.
+
+## 16.6.61.0
+* Certified with Mintegral SDK 16.6.61.
+
+## 16.6.51.1
+* Remove ProGuard rules since they are included in Mintegral's libraries.
+
+## 16.6.51.0
+* Certified with Mintegral SDK 16.6.51.
+
+## 16.6.41.0
+* Certified with Mintegral SDK 16.6.41.
+
+## 16.6.34.0
+* Certified with Mintegral SDK 16.6.34.
+
+## 16.6.31.0
+* Certified with Mintegral SDK 16.6.31.
+
+## 16.6.21.0
+* Certified with Mintegral SDK 16.6.21.
+
+## 16.6.11.0
+* Certified with Mintegral SDK 16.6.11.
+
+## 16.5.91.2
+* Update to set channel code/ID only when SDK is being initialized.
+
+## 16.5.91.1
+* Update to retrieve creative ID and set channel code/ID using new APIs.
+* Now requires MAX SDK version 9.15.0 or higher.
+
+## 16.5.91.0
+* Certified with Mintegral SDK 16.5.91.
+
+## 16.5.81.0
+* Certified with Mintegral SDK 16.5.81.
+
+## 16.5.71.0
+* Certified with Mintegral SDK 16.5.71.
+* Note: This is the first Mintegral SDK with TCF v2 compliance.
+
+## 16.5.61.0
+* Certified with Mintegral SDK 16.5.61.
+
+## 16.5.51.0
+* Certified with Mintegral SDK 16.5.51.
+
+## 16.5.41.0
+* Certified with Mintegral SDK 16.5.41.
+
+## 16.5.31.0
+* Certified with Mintegral SDK 16.5.31.
+
+## 16.5.21.0
+* Certified with Mintegral SDK 16.5.21.
+
+## 16.5.11.0
+* Certified with Mintegral SDK 16.5.11.
+
+## 16.4.91.0
+* Certified with Mintegral SDK 16.4.91.
+
+## 16.4.81.0
+* Certified with Mintegral SDK 16.4.81.
+
+## 16.4.71.0
+* Certified with Mintegral SDK 16.4.71.
+
+## 16.4.61.0
+* Certified with Mintegral SDK 16.4.61.
+
+## 16.4.51.0
+* Certified with Mintegral SDK 16.4.51.
+
+## 16.4.41.1
+* Fix native ads memory leak by calling `MBMediaView.destory()`.
+
+## 16.4.41.0
+* Certified with Mintegral SDK 16.4.41.
+
+## 16.4.31.2
+* Update call to `setDoNotTrackStatus(...)` to pass in context.
+* Remove the `getPrivacySetting()` function and call privacy methods directly.
+* Now requires MAX SDK version 9.14.0 or higher.
+
+## 16.4.31.1
+* Fix NPE that occurs when `mbBidNativeHandler` or `mbBidNativeAdViewHandler` is `null` on native or native ad view ad loads.
+
 ## 16.4.31.0
 * Certified with Mintegral SDK 16.4.31.
 
@@ -222,7 +402,7 @@
 
 ## 15.2.11.0
 * Certified with Mintegral SDK 15.2.11.
-* Update to use Mintegral `oversea` SDK from their private repository. 
+* Update to use Mintegral `oversea` SDK from their private repository.
 * Update 10000000 version check to 9140000.
 * Update initialization log.
 

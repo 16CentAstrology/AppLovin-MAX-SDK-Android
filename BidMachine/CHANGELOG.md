@@ -1,5 +1,79 @@
 # Changelog
 
+## 3.2.0.0
+* Certified with BidMachine SDK 3.2.0.
+
+## 3.1.1.1
+* Introduced `verification.properties` to facilitate adapter ownership verification with Google SDK console.
+
+## 3.1.1.0
+* Certified with BidMachine SDK 3.1.1.
+* Removed redundant log output when initialization was already completed.
+
+## 3.1.0.0
+* Certified with BidMachine SDK 3.1.0.
+* Annotated all `Activity` parameters with `@Nullable` to better avoid potential NPEs.
+
+## 3.0.1.2
+* Add AppLovin MAX SDK version 13.0.0+ as a maven dependency.
+
+## 3.0.1.1
+* Requires minimum AppLovin MAX SDK version be 13.0.0.
+* Removed support for COPPA.
+* Remove deprecated native API usages.
+* Certified with BidMachine SDK 3.0.1.
+
+## 3.0.0.0
+* Certified with BidMachine SDK 3.0.0.
+* Requires minimum Android API level be 21 or higher.
+
+## 2.7.0.0
+* Certified with BidMachine SDK 2.7.0.
+
+## 2.6.0.1
+* Fix a dependency issue with previous adapter version.
+
+## 2.6.0.0
+* Certified with BidMachine SDK 2.6.0.
+* Remove deprecated callbacks `onRewardedAdVideoStarted()` and `onRewardedAdVideoCompleted()`.
+
+## 2.5.2.0
+* Certified with BidMachine SDK 2.5.2.
+
+## 2.5.1.0
+* Certified with BidMachine SDK 2.5.1.
+
+## 2.5.0.0
+* Certified with BidMachine SDK 2.5.0.
+
+## 2.4.2.0
+* Certified with BidMachine SDK 2.4.2.
+
+## 2.4.1.0
+* Certified with BidMachine SDK 2.4.1.
+
+## 2.4.0.0
+* Certified with BidMachine SDK 2.4.0.
+
+## 2.3.3.0
+* Certified with BidMachine SDK 2.3.3.
+
+## 2.3.2.0
+* Certified with BidMachine SDK 2.3.2.
+
+## 2.3.1.0
+* Certified with BidMachine SDK 2.3.1.
+* Add `onAdShowFailed()` callback for banners, MRECs, and native ads.
+
+## 2.2.0.1
+* Updated `BidMachine.getBidToken()` usage.
+
+## 2.2.0.0
+* Certified with BidMachine SDK 2.2.0.
+
+## 2.1.13.0
+* Certified with BidMachine SDK 2.1.13.
+
 ## 2.1.12.0
 * Certified with BidMachine SDK 2.1.12.
 

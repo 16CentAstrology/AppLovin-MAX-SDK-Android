@@ -28,7 +28,6 @@ import com.applovin.mediation.adapter.listeners.MaxNativeAdAdapterListener;
 import com.applovin.mediation.adapter.listeners.MaxRewardedAdapterListener;
 import com.applovin.mediation.adapter.listeners.MaxSignalCollectionListener;
 import com.applovin.mediation.adapter.parameters.MaxAdapterInitializationParameters;
-import com.applovin.mediation.adapter.parameters.MaxAdapterParameters;
 import com.applovin.mediation.adapter.parameters.MaxAdapterResponseParameters;
 import com.applovin.mediation.adapter.parameters.MaxAdapterSignalCollectionParameters;
 import com.applovin.mediation.adapters.bytedance.BuildConfig;
@@ -41,6 +40,7 @@ import com.bytedance.sdk.openadsdk.api.banner.PAGBannerAdInteractionListener;
 import com.bytedance.sdk.openadsdk.api.banner.PAGBannerAdLoadListener;
 import com.bytedance.sdk.openadsdk.api.banner.PAGBannerRequest;
 import com.bytedance.sdk.openadsdk.api.banner.PAGBannerSize;
+import com.bytedance.sdk.openadsdk.api.init.BiddingTokenCallback;
 import com.bytedance.sdk.openadsdk.api.init.PAGConfig;
 import com.bytedance.sdk.openadsdk.api.init.PAGSdk;
 import com.bytedance.sdk.openadsdk.api.interstitial.PAGInterstitialAd;
@@ -65,7 +65,6 @@ import com.bytedance.sdk.openadsdk.api.reward.PAGRewardedRequest;
 
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -163,7 +162,7 @@ public class ByteDanceMediationAdapter
     public ByteDanceMediationAdapter(final AppLovinSdk sdk) { super( sdk ); }
 
     @Override
-    public void initialize(final MaxAdapterInitializationParameters parameters, final Activity activity, final OnCompletionListener onCompletionListener)
+    public void initialize(final MaxAdapterInitializationParameters parameters, @Nullable final Activity activity, final OnCompletionListener onCompletionListener)
     {
         if ( initialized.compareAndSet( false, true ) )
         {
@@ -177,27 +176,16 @@ public class ByteDanceMediationAdapter
             // Set mediation provider
             builder.setUserData( createAdConfigData( serverParameters, true ) );
 
-            Boolean hasUserConsent = getPrivacySetting( "hasUserConsent", parameters );
+            Boolean hasUserConsent = parameters.hasUserConsent();
             if ( hasUserConsent != null )
             {
                 builder.setGDPRConsent( hasUserConsent ? 1 : 0 );
             }
 
-            // NOTE: Adapter / mediated SDK has support for COPPA, but is not approved by Play Store and therefore will be filtered on COPPA traffic
-            // https://support.google.com/googleplay/android-developer/answer/9283445?hl=en
-            Boolean isAgeRestrictedUser = getPrivacySetting( "isAgeRestrictedUser", parameters );
-            if ( isAgeRestrictedUser != null )
+            Boolean isDoNotSell = parameters.isDoNotSell();
+            if ( isDoNotSell != null )
             {
-                builder.setChildDirected( isAgeRestrictedUser ? 1 : 0 );
-            }
-
-            if ( AppLovinSdk.VERSION_CODE >= 91100 )
-            {
-                Boolean isDoNotSell = getPrivacySetting( "isDoNotSell", parameters );
-                if ( isDoNotSell != null )
-                {
-                    builder.setDoNotSell( isDoNotSell ? 1 : 0 );
-                }
+                builder.setDoNotSell( isDoNotSell ? 1 : 0 );
             }
 
             PAGConfig adConfig = builder.appId( appId )
@@ -228,7 +216,6 @@ public class ByteDanceMediationAdapter
         }
         else
         {
-            log( "attempted initialization already - marking initialization as completed" );
             onCompletionListener.onCompletion( status, null );
         }
     }
@@ -243,6 +230,22 @@ public class ByteDanceMediationAdapter
     public String getAdapterVersion()
     {
         return BuildConfig.VERSION_NAME;
+    }
+
+    // @Override
+    @Nullable
+    public Boolean shouldLoadAdsOnUiThread(final MaxAdFormat adFormat)
+    {
+        // Loading Pangle ads on the UI thread could result in ANRs
+        return false;
+    }
+
+    // @Override
+    @Nullable
+    public Boolean shouldShowAdsOnUiThread(final MaxAdFormat adFormat)
+    {
+        // Pangle requires fullscreen ads to be shown on the UI thread
+        return true;
     }
 
     @Override
@@ -270,12 +273,19 @@ public class ByteDanceMediationAdapter
     //region Signal Collection
 
     @Override
-    public void collectSignal(final MaxAdapterSignalCollectionParameters parameters, final Activity activity, final MaxSignalCollectionListener callback)
+    public void collectSignal(final MaxAdapterSignalCollectionParameters parameters, @Nullable final Activity activity, final MaxSignalCollectionListener callback)
     {
         log( "Collecting signal..." );
 
-        String signal = PAGSdk.getBiddingToken();
-        callback.onSignalCollected( signal );
+        PAGSdk.getBiddingToken( new BiddingTokenCallback()
+        {
+            @Override
+            public void onBiddingTokenCollected(final String biddingToken)
+            {
+                log( "Signal collection successful" );
+                callback.onSignalCollected( biddingToken );
+            }
+        } );
     }
 
     //endregion
@@ -283,7 +293,7 @@ public class ByteDanceMediationAdapter
     //region MaxInterstitialAdapter Methods
 
     @Override
-    public void loadInterstitialAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxInterstitialAdapterListener listener)
+    public void loadInterstitialAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxInterstitialAdapterListener listener)
     {
         String codeId = parameters.getThirdPartyAdPlacementId();
         String bidResponse = parameters.getBidResponse();
@@ -304,7 +314,7 @@ public class ByteDanceMediationAdapter
     }
 
     @Override
-    public void showInterstitialAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxInterstitialAdapterListener listener)
+    public void showInterstitialAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxInterstitialAdapterListener listener)
     {
         String codeId = parameters.getThirdPartyAdPlacementId();
         log( "Showing interstitial ad for code id \"" + codeId + "\"..." );
@@ -361,7 +371,7 @@ public class ByteDanceMediationAdapter
     //region MaxRewardedAdapter Methods
 
     @Override
-    public void loadRewardedAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxRewardedAdapterListener listener)
+    public void loadRewardedAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxRewardedAdapterListener listener)
     {
         String codeId = parameters.getThirdPartyAdPlacementId();
         String bidResponse = parameters.getBidResponse();
@@ -386,7 +396,7 @@ public class ByteDanceMediationAdapter
     }
 
     @Override
-    public void showRewardedAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxRewardedAdapterListener listener)
+    public void showRewardedAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxRewardedAdapterListener listener)
     {
         String codeId = parameters.getThirdPartyAdPlacementId();
         log( "Showing rewarded ad for code id \"" + codeId + "\"..." );
@@ -403,7 +413,7 @@ public class ByteDanceMediationAdapter
     //region MaxAdViewAdapter Methods
 
     @Override
-    public void loadAdViewAd(final MaxAdapterResponseParameters parameters, final MaxAdFormat adFormat, final Activity activity, final MaxAdViewAdapterListener listener)
+    public void loadAdViewAd(final MaxAdapterResponseParameters parameters, final MaxAdFormat adFormat, @Nullable final Activity activity, final MaxAdViewAdapterListener listener)
     {
         boolean isNative = parameters.getServerParameters().getBoolean( "is_native" );
         String bidResponse = parameters.getBidResponse();
@@ -445,7 +455,7 @@ public class ByteDanceMediationAdapter
     //region MaxNativeAdAdapter Methods
 
     @Override
-    public void loadNativeAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxNativeAdAdapterListener listener)
+    public void loadNativeAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxNativeAdAdapterListener listener)
     {
         String bidResponse = parameters.getBidResponse();
         boolean isBiddingAd = AppLovinSdkUtils.isValidString( bidResponse );
@@ -476,22 +486,6 @@ public class ByteDanceMediationAdapter
     //endregion
 
     //region Helper Methods
-
-    private Boolean getPrivacySetting(final String privacySetting, final MaxAdapterParameters parameters)
-    {
-        try
-        {
-            // Use reflection because compiled adapters have trouble fetching `boolean` from old SDKs and `Boolean` from new SDKs (above 9.14.0)
-            Class<?> parametersClass = parameters.getClass();
-            Method privacyMethod = parametersClass.getMethod( privacySetting );
-            return (Boolean) privacyMethod.invoke( parameters );
-        }
-        catch ( Exception exception )
-        {
-            log( "Error getting privacy setting " + privacySetting + " with exception: ", exception );
-            return ( AppLovinSdk.VERSION_CODE >= 9140000 ) ? null : false;
-        }
-    }
 
     private Callable<Drawable> createDrawableTask(final String imageUrl, final Resources resources)
     {
@@ -578,7 +572,7 @@ public class ByteDanceMediationAdapter
         return new MaxAdapterError( adapterError.getErrorCode(), adapterError.getErrorMessage(), byteDanceErrorCode, byteDanceErrorMessage );
     }
 
-    private Context getContext(@Nullable Activity activity)
+    private Context getContext(@Nullable final Activity activity)
     {
         // NOTE: `activity` can only be null in 11.1.0+, and `getApplicationContext()` is introduced in 11.1.0
         return ( activity != null ) ? activity.getApplicationContext() : getApplicationContext();
@@ -761,7 +755,6 @@ public class ByteDanceMediationAdapter
             log( "Rewarded ad displayed: " + codeId );
 
             listener.onRewardedAdDisplayed();
-            listener.onRewardedAdVideoStarted();
         }
 
         @Override
@@ -789,8 +782,6 @@ public class ByteDanceMediationAdapter
         public void onAdDismissed()
         {
             log( "Rewarded ad hidden: " + codeId );
-
-            listener.onRewardedAdVideoCompleted();
 
             if ( hasGrantedReward || shouldAlwaysRewardUser() )
             {
@@ -874,7 +865,7 @@ public class ByteDanceMediationAdapter
         final WeakReference<Activity>  activityRef;
         final MaxAdViewAdapterListener listener;
 
-        NativeAdViewListener(final MaxAdapterResponseParameters parameters, final MaxAdFormat adFormat, final Activity activity, final MaxAdViewAdapterListener listener)
+        NativeAdViewListener(final MaxAdapterResponseParameters parameters, final MaxAdFormat adFormat, @Nullable final Activity activity, final MaxAdViewAdapterListener listener)
         {
             this.codeId = parameters.getThirdPartyAdPlacementId();
             this.serverParameters = parameters.getServerParameters();
@@ -897,15 +888,7 @@ public class ByteDanceMediationAdapter
             log( "Native " + adFormat.getLabel() + " ad loaded: " + codeId + ". Preparing assets..." );
 
             final PAGNativeAdData nativeAdData = nativeAdViewAd.getNativeAdData();
-            final ExecutorService executorServiceToUse;
-            if ( AppLovinSdk.VERSION_CODE >= 11000000 )
-            {
-                executorServiceToUse = getCachingExecutorService();
-            }
-            else
-            {
-                executorServiceToUse = executor;
-            }
+            final ExecutorService executorServiceToUse = getCachingExecutorService();
 
             final Activity activity = activityRef.get();
             final Context context = getContext( activity );
@@ -924,9 +907,7 @@ public class ByteDanceMediationAdapter
                         // Pangle's image resource comes in the form of a URL which needs to be fetched in a non-blocking manner
                         log( "Adding native ad icon (" + imageUrl + ") to queue to be fetched" );
 
-                        iconDrawableFuture = ( AppLovinSdk.VERSION_CODE >= 11000000 )
-                                ? createDrawableFuture( imageUrl, resources )
-                                : executorServiceToUse.submit( createDrawableTask( imageUrl, resources ) );
+                        iconDrawableFuture = createDrawableFuture( imageUrl, resources );
                     }
 
                     // Execute and timeout tasks if incomplete within the given time
@@ -960,8 +941,8 @@ public class ByteDanceMediationAdapter
                                     .setBody( nativeAdData.getDescription() )
                                     .setCallToAction( nativeAdData.getButtonText() )
                                     .setIcon( icon )
-                                    .setMediaView( nativeAdData.getMediaView() )
                                     .setOptionsView( nativeAdData.getAdLogoView() )
+                                    .setMediaView( nativeAdData.getMediaView() )
                                     .build();
 
                             String templateName = BundleUtils.getString( "template", "", serverParameters );
@@ -970,17 +951,8 @@ public class ByteDanceMediationAdapter
                                 log( "Vertical native banners are only supported on MAX SDK 9.14.5 and above. Default horizontal native template will be used." );
                             }
 
-                            MaxNativeAdView maxNativeAdView;
-                            if ( AppLovinSdk.VERSION_CODE >= 11010000 )
-                            {
-                                maxNativeAdView = new MaxNativeAdView( maxNativeAd, templateName, context );
-                            }
-                            else
-                            {
-                                maxNativeAdView = new MaxNativeAdView( maxNativeAd, templateName, activity );
-                            }
-
-                            List<View> clickableViews = new ArrayList<>();
+                            final MaxNativeAdView maxNativeAdView = new MaxNativeAdView( maxNativeAd, templateName, context );
+                            final List<View> clickableViews = new ArrayList<>( 4 );
                             if ( AppLovinSdkUtils.isValidString( maxNativeAd.getTitle() ) && maxNativeAdView.getTitleTextView() != null )
                             {
                                 clickableViews.add( maxNativeAdView.getTitleTextView() );
@@ -993,7 +965,7 @@ public class ByteDanceMediationAdapter
                             {
                                 clickableViews.add( maxNativeAdView.getIconImageView() );
                             }
-                            final View mediaContentView = ( AppLovinSdk.VERSION_CODE >= 11000000 ) ? maxNativeAdView.getMediaContentViewGroup() : maxNativeAdView.getMediaContentView();
+                            final View mediaContentView = maxNativeAdView.getMediaContentViewGroup();
                             if ( maxNativeAd.getMediaView() != null && mediaContentView != null )
                             {
                                 clickableViews.add( mediaContentView );
@@ -1162,8 +1134,8 @@ public class ByteDanceMediationAdapter
                                     .setBody( nativeAdData.getDescription() )
                                     .setCallToAction( nativeAdData.getButtonText() )
                                     .setIcon( icon )
-                                    .setMediaView( nativeAdData.getMediaView() )
-                                    .setOptionsView( nativeAdData.getAdLogoView() );
+                                    .setOptionsView( nativeAdData.getAdLogoView() )
+                                    .setMediaView( nativeAdData.getMediaView() );
                             MaxNativeAd maxNativeAd = new MaxByteDanceNativeAd( builder );
 
                             log( "Native ad fully loaded: " + codeId );
@@ -1238,30 +1210,6 @@ public class ByteDanceMediationAdapter
         }
 
         @Override
-        public void prepareViewForInteraction(final MaxNativeAdView maxNativeAdView)
-        {
-            final List<View> clickableViews = new ArrayList<>();
-            if ( AppLovinSdkUtils.isValidString( getTitle() ) && maxNativeAdView.getTitleTextView() != null )
-            {
-                clickableViews.add( maxNativeAdView.getTitleTextView() );
-            }
-            if ( AppLovinSdkUtils.isValidString( getBody() ) && maxNativeAdView.getBodyTextView() != null )
-            {
-                clickableViews.add( maxNativeAdView.getBodyTextView() );
-            }
-            if ( getIcon() != null && maxNativeAdView.getIconImageView() != null )
-            {
-                clickableViews.add( maxNativeAdView.getIconImageView() );
-            }
-            if ( getMediaView() != null && maxNativeAdView.getMediaContentViewGroup() != null )
-            {
-                clickableViews.add( maxNativeAdView.getMediaContentViewGroup() );
-            }
-
-            prepareForInteraction( clickableViews, maxNativeAdView );
-        }
-
-        // @Override
         public boolean prepareForInteraction(final List<View> clickableViews, final ViewGroup container)
         {
             final PAGNativeAd nativeAd = ByteDanceMediationAdapter.this.nativeAd;

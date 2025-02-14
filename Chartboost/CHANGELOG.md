@@ -1,5 +1,62 @@
 # Changelog
 
+## 9.8.2.1
+* Introduced `verification.properties` to facilitate adapter ownership verification with Google SDK console.
+
+## 9.8.2.0
+* Certified with Chartboost SDK 9.8.2.
+
+## 9.8.1.0
+* Certified with Chartboost SDK 9.8.1.
+* Removed redundant log output when initialization was already completed.
+
+## 9.8.0.1
+* Downgrade Chartboost SDK to version 9.7.0 due to removal of 9.8.0.
+
+## 9.8.0.0
+* Certified with Chartboost SDK 9.8.0.
+
+## 9.7.0.4
+* Add support for loading ads without an `Activity` context.
+* Annotated all `Activity` parameters with `@Nullable` to better avoid potential NPEs.
+
+## 9.7.0.3
+* Requires minimum AppLovin MAX SDK version be 13.0.0.
+* Removed support for COPPA.
+
+## 9.7.0.2
+* Add bidding support for banners, leaders, MRECs, interstitials, and rewarded ads.
+
+## 9.7.0.1
+* Remove deprecated callbacks `onRewardedAdVideoStarted()` and `onRewardedAdVideoCompleted()`.
+
+## 9.7.0.0
+* Certified with Chartboost SDK 9.7.0.
+
+## 9.6.1.0
+* Certified with Chartboost SDK 9.6.1.
+
+## 9.6.0.0
+* Certified with Chartboost SDK 9.6.0.
+
+## 9.5.0.0
+* Certified with Chartboost SDK 9.5.0.
+
+## 9.4.1.0
+* Certified with Chartboost SDK 9.4.1.
+
+## 9.4.0.0
+* Certified with Chartboost SDK 9.4.0.
+
+## 9.3.1.0
+* Certified with Chartboost SDK 9.3.1.
+
+## 9.3.0.0
+* Certified with Chartboost SDK 9.3.0.
+* Use Chartboost's custom Maven repo for their SDK (updated to: https://cboost.jfrog.io/artifactory/chartboost-ads/).
+* Remove the `getPrivacySetting()` function and call privacy methods directly.
+* Now requires MAX SDK version 9.14.0 or higher.
+
 ## 9.2.1.0
 * Certified with Chartboost SDK 9.2.1.
 

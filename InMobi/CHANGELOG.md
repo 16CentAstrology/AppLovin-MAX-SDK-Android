@@ -1,5 +1,101 @@
 # Changelog
 
+## 10.8.0.1
+* Introduced `verification.properties` to facilitate adapter ownership verification with Google SDK console.
+* Removed redundant log output when initialization was already completed.
+
+## 10.8.0.0
+* Certified with InMobi SDK 10.8.0.
+
+## 10.7.8.1
+* Add support for loading fullscreen ads without an `Activity` context.
+* Annotated all `Activity` parameters with `@Nullable` to better avoid potential NPEs.
+
+## 10.7.8.0
+* Certified with InMobi SDK 10.7.8.
+
+## 10.7.7.2
+* Fix firing click callback twice on single click for native ads.
+
+## 10.7.7.1
+* Requires minimum AppLovin MAX SDK version be 13.0.0.
+* Removed support for COPPA.
+* Remove deprecated native API usages.
+
+## 10.7.7.0
+* Certified with InMobi SDK 10.7.7.
+
+## 10.7.6.0
+* Certified with InMobi SDK 10.7.6.
+
+## 10.7.5.0
+* Certified with InMobi SDK 10.7.5.
+
+## 10.7.4.0
+* Certified with InMobi SDK 10.7.4.
+
+## 10.7.3.0
+* Certified with InMobi SDK 10.7.3.
+* Remove deprecated callbacks `onRewardedAdVideoStarted()` and `onRewardedAdVideoCompleted()`.
+
+## 10.6.7.0
+* Certified with InMobi SDK 10.6.7.
+
+## 10.6.6.0
+* Certified with InMobi SDK 10.6.6.
+
+## 10.6.3.1
+* Fix NPE caused by calling `LayoutParams.width` to get media view width for native ads.
+
+## 10.6.3.0
+* Certified with InMobi SDK 10.6.3.
+* Improve error handling.
+
+## 10.6.2.0
+* Certified with InMobi SDK 10.6.2.
+
+## 10.6.1.0
+* Certified with InMobi SDK 10.6.1.
+
+## 10.6.0.1
+* Downgrade InMobi SDK to 10.5.9.
+
+## 10.6.0.0
+* Certified with InMobi SDK 10.6.0.
+
+## 10.5.9.0
+* Certified with InMobi SDK 10.5.9.
+
+## 10.5.8.2
+* Fix NPE caused by initializing with null account id.
+
+## 10.5.8.1
+* Fix `com.inmobi.ads.exceptions.SdkNotInitializedException` from calling `InMobiSdk.setIsAgeRestricted(...)` with `true` value before initializing SDK.
+* Updated to use `InMobiPrivacyCompliance.setDoNotSell()` API to set CCPA values.
+
+## 10.5.8.0
+* Certified with InMobi SDK 10.5.8.
+
+## 10.5.7.0
+* Certified with InMobi's Kotlin SDK 10.5.7.
+
+## 10.1.4.3
+* Fix the `mediaView` scaling bug for native ads, caused by mismatch in aspect ratio.
+
+## 10.1.4.2
+* Revert temporary workaround for the issue where `onAdImpression()` is called before `onAdLoadSucceeded()`.
+
+## 10.1.4.1
+* Add a temporary workaround for the issue where `onAdImpression()` is called before `onAdLoadSucceeded().`
+
+## 10.1.4.0
+* Certified with InMobi SDK 10.1.4.
+* Remove the `getPrivacySetting()` function and call privacy methods directly.
+* Now requires MAX SDK version 9.14.0 or higher.
+
+## 10.1.3.4
+* Initialize InMobi SDK on UI thread to avoid crash: `IllegalStateException: Calling View methods on another thread than the UI thread`.
+
 ## 10.1.3.3
 * Fix `ClassCastException` that occurs when the parent view of `mediaView` is not of type `FrameLayout` for native ads.
 
@@ -175,7 +271,7 @@
 * Updated to not set privacy settings if null.
 
 ## 9.0.7.1
-* Changed signal collecting ad objects from method level to class level. 
+* Changed signal collecting ad objects from method level to class level.
 
 ## 9.0.7.0
 * Certified with InMobi SDK 9.0.7.

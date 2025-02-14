@@ -12,15 +12,17 @@ import com.applovin.mediation.adapter.MaxAdViewAdapter;
 import com.applovin.mediation.adapter.MaxAdapterError;
 import com.applovin.mediation.adapter.MaxInterstitialAdapter;
 import com.applovin.mediation.adapter.MaxRewardedAdapter;
+import com.applovin.mediation.adapter.MaxSignalProvider;
 import com.applovin.mediation.adapter.listeners.MaxAdViewAdapterListener;
 import com.applovin.mediation.adapter.listeners.MaxInterstitialAdapterListener;
 import com.applovin.mediation.adapter.listeners.MaxRewardedAdapterListener;
+import com.applovin.mediation.adapter.listeners.MaxSignalCollectionListener;
 import com.applovin.mediation.adapter.parameters.MaxAdapterInitializationParameters;
 import com.applovin.mediation.adapter.parameters.MaxAdapterParameters;
 import com.applovin.mediation.adapter.parameters.MaxAdapterResponseParameters;
+import com.applovin.mediation.adapter.parameters.MaxAdapterSignalCollectionParameters;
 import com.applovin.mediation.adapters.chartboost.BuildConfig;
 import com.applovin.sdk.AppLovinSdk;
-import com.applovin.sdk.AppLovinSdkConfiguration;
 import com.applovin.sdk.AppLovinSdkUtils;
 import com.chartboost.sdk.Chartboost;
 import com.chartboost.sdk.LoggingLevel;
@@ -44,11 +46,9 @@ import com.chartboost.sdk.events.ShowError;
 import com.chartboost.sdk.events.ShowEvent;
 import com.chartboost.sdk.events.StartError;
 import com.chartboost.sdk.privacy.model.CCPA;
-import com.chartboost.sdk.privacy.model.COPPA;
 import com.chartboost.sdk.privacy.model.DataUseConsent;
 import com.chartboost.sdk.privacy.model.GDPR;
 
-import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import androidx.annotation.NonNull;
@@ -56,7 +56,7 @@ import androidx.annotation.Nullable;
 
 public class ChartboostMediationAdapter
         extends MediationAdapterBase
-        implements MaxInterstitialAdapter, MaxRewardedAdapter, MaxAdViewAdapter
+        implements MaxSignalProvider, MaxInterstitialAdapter, MaxRewardedAdapter, MaxAdViewAdapter
 {
     private static final AtomicBoolean initialized        = new AtomicBoolean();
     private static final Mediation     MEDIATION_PROVIDER = new Mediation( "MAX", AppLovinSdk.VERSION, BuildConfig.VERSION_NAME );
@@ -71,7 +71,7 @@ public class ChartboostMediationAdapter
     public ChartboostMediationAdapter(final AppLovinSdk sdk) { super( sdk ); }
 
     @Override
-    public void initialize(final MaxAdapterInitializationParameters parameters, final Activity activity, final OnCompletionListener onCompletionListener)
+    public void initialize(final MaxAdapterInitializationParameters parameters, @Nullable final Activity activity, final OnCompletionListener onCompletionListener)
     {
         if ( initialized.compareAndSet( false, true ) )
         {
@@ -122,8 +122,6 @@ public class ChartboostMediationAdapter
         }
         else
         {
-            log( "Chartboost SDK already initialized..." );
-
             onCompletionListener.onCompletion( status, null );
         }
     }
@@ -166,12 +164,23 @@ public class ChartboostMediationAdapter
     }
 
     @Override
-    public void loadInterstitialAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxInterstitialAdapterListener listener)
+    public void collectSignal(final MaxAdapterSignalCollectionParameters parameters, @Nullable final Activity activity, final MaxSignalCollectionListener callback)
+    {
+        log( "Collecting signal..." );
+
+        String signal = Chartboost.getBidderToken();
+        callback.onSignalCollected( signal );
+    }
+
+    @Override
+    public void loadInterstitialAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxInterstitialAdapterListener listener)
     {
         final String location = retrieveLocation( parameters );
-        log( "Loading interstitial ad for location \"" + location + "\"..." );
+        String bidResponse = parameters.getBidResponse();
+        boolean isBidding = AppLovinSdkUtils.isValidString( bidResponse );
+        log( "Loading " + ( isBidding ? "bidding " : "" ) + "interstitial ad for location \"" + location + "\"..." );
 
-        updateConsentStatus( parameters, activity.getApplicationContext() );
+        updateConsentStatus( parameters, getContext( activity ) );
 
         interstitialAd = new Interstitial( location, new InterstitialAdListener( listener ), MEDIATION_PROVIDER );
 
@@ -182,7 +191,14 @@ public class ChartboostMediationAdapter
         }
         else if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP )
         {
-            interstitialAd.cache();
+            if ( isBidding )
+            {
+                interstitialAd.cache( bidResponse );
+            }
+            else
+            {
+                interstitialAd.cache();
+            }
         }
         else // Chartboost does not support showing interstitial ads for devices with Android versions lower than 21
         {
@@ -192,7 +208,7 @@ public class ChartboostMediationAdapter
     }
 
     @Override
-    public void showInterstitialAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxInterstitialAdapterListener listener)
+    public void showInterstitialAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxInterstitialAdapterListener listener)
     {
         final String location = retrieveLocation( parameters );
         log( "Showing interstitial ad for location \"" + location + "\"..." );
@@ -209,12 +225,14 @@ public class ChartboostMediationAdapter
     }
 
     @Override
-    public void loadRewardedAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxRewardedAdapterListener listener)
+    public void loadRewardedAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxRewardedAdapterListener listener)
     {
         final String location = retrieveLocation( parameters );
-        log( "Loading rewarded ad for location \"" + location + "\"..." );
+        String bidResponse = parameters.getBidResponse();
+        boolean isBidding = AppLovinSdkUtils.isValidString( bidResponse );
+        log( "Loading " + ( isBidding ? "bidding " : "" ) + "rewarded ad for location \"" + location + "\"..." );
 
-        updateConsentStatus( parameters, activity.getApplicationContext() );
+        updateConsentStatus( parameters, getContext( activity ) );
 
         rewardedAd = new Rewarded( location, new RewardedAdListener( listener ), MEDIATION_PROVIDER );
 
@@ -225,7 +243,14 @@ public class ChartboostMediationAdapter
         }
         else if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP )
         {
-            rewardedAd.cache();
+            if ( isBidding )
+            {
+                rewardedAd.cache( bidResponse );
+            }
+            else
+            {
+                rewardedAd.cache();
+            }
         }
         else // Chartboost does not support showing rewarded ads for devices with Android versions lower than 21
         {
@@ -235,7 +260,7 @@ public class ChartboostMediationAdapter
     }
 
     @Override
-    public void showRewardedAd(final MaxAdapterResponseParameters parameters, final Activity activity, final MaxRewardedAdapterListener listener)
+    public void showRewardedAd(final MaxAdapterResponseParameters parameters, @Nullable final Activity activity, final MaxRewardedAdapterListener listener)
     {
         final String location = retrieveLocation( parameters );
         log( "Showing rewarded ad for location \"" + location + "\"..." );
@@ -254,14 +279,16 @@ public class ChartboostMediationAdapter
     }
 
     @Override
-    public void loadAdViewAd(final MaxAdapterResponseParameters parameters, final MaxAdFormat adFormat, final Activity activity, final MaxAdViewAdapterListener listener)
+    public void loadAdViewAd(final MaxAdapterResponseParameters parameters, final MaxAdFormat adFormat, @Nullable final Activity activity, final MaxAdViewAdapterListener listener)
     {
         final String location = retrieveLocation( parameters );
-        log( "Loading " + adFormat.getLabel() + " ad for location \"" + location + "\"..." );
+        String bidResponse = parameters.getBidResponse();
+        boolean isBidding = AppLovinSdkUtils.isValidString( bidResponse );
+        log( "Loading " + ( isBidding ? "bidding " : "" ) + adFormat.getLabel() + " ad for location \"" + location + "\"..." );
 
-        updateConsentStatus( parameters, activity.getApplicationContext() );
+        updateConsentStatus( parameters, getContext( activity ) );
 
-        adView = new Banner( activity.getApplicationContext(), location, toAdSize( adFormat ), new AdViewAdListener( listener, adFormat ), MEDIATION_PROVIDER );
+        adView = new Banner( getContext( activity ), location, toAdSize( adFormat ), new AdViewAdListener( listener, adFormat ), MEDIATION_PROVIDER );
 
         if ( adView.isCached() )
         {
@@ -271,7 +298,14 @@ public class ChartboostMediationAdapter
         }
         else if ( Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP )
         {
-            adView.cache();
+            if ( isBidding )
+            {
+                adView.cache( bidResponse );
+            }
+            else
+            {
+                adView.cache();
+            }
         }
         else  // Chartboost does not support showing ad view ads for devices with Android versions lower than 21
         {
@@ -284,44 +318,18 @@ public class ChartboostMediationAdapter
 
     private void updateConsentStatus(MaxAdapterParameters parameters, Context applicationContext)
     {
-        Boolean hasUserConsent = getPrivacySetting( "hasUserConsent", parameters );
+        Boolean hasUserConsent = parameters.hasUserConsent();
         if ( hasUserConsent != null )
         {
             DataUseConsent gdprConsent = new GDPR( hasUserConsent ? GDPR.GDPR_CONSENT.BEHAVIORAL : GDPR.GDPR_CONSENT.NON_BEHAVIORAL );
             Chartboost.addDataUseConsent( applicationContext, gdprConsent );
         }
 
-        if ( AppLovinSdk.VERSION_CODE >= 91100 )
+        Boolean isDoNotSell = parameters.isDoNotSell();
+        if ( isDoNotSell != null )
         {
-            Boolean isDoNotSell = getPrivacySetting( "isDoNotSell", parameters );
-            if ( isDoNotSell != null )
-            {
-                DataUseConsent ccpaConsent = new CCPA( isDoNotSell ? CCPA.CCPA_CONSENT.OPT_OUT_SALE : CCPA.CCPA_CONSENT.OPT_IN_SALE );
-                Chartboost.addDataUseConsent( applicationContext, ccpaConsent );
-            }
-        }
-
-        Boolean isAgeRestrictedUser = getPrivacySetting( "isAgeRestrictedUser", parameters );
-        if ( isAgeRestrictedUser != null )
-        {
-            DataUseConsent coppaConsent = new COPPA( isAgeRestrictedUser );
-            Chartboost.addDataUseConsent( applicationContext, coppaConsent );
-        }
-    }
-
-    private Boolean getPrivacySetting(final String privacySetting, final MaxAdapterParameters parameters)
-    {
-        try
-        {
-            // Use reflection because compiled adapters have trouble fetching `boolean` from old SDKs and `Boolean` from new SDKs (above 9.14.0)
-            Class<?> parametersClass = parameters.getClass();
-            Method privacyMethod = parametersClass.getMethod( privacySetting );
-            return (Boolean) privacyMethod.invoke( parameters );
-        }
-        catch ( Exception exception )
-        {
-            log( "Error getting privacy setting " + privacySetting + " with exception: ", exception );
-            return ( AppLovinSdk.VERSION_CODE >= 9140000 ) ? null : false;
+            DataUseConsent ccpaConsent = new CCPA( isDoNotSell ? CCPA.CCPA_CONSENT.OPT_OUT_SALE : CCPA.CCPA_CONSENT.OPT_IN_SALE );
+            Chartboost.addDataUseConsent( applicationContext, ccpaConsent );
         }
     }
 
@@ -461,6 +469,12 @@ public class ChartboostMediationAdapter
         }, 500 );
     }
 
+    private Context getContext(@Nullable final Activity activity)
+    {
+        // NOTE: `activity` can only be null in 11.1.0+, and `getApplicationContext()` is introduced in 11.1.0
+        return ( activity != null ) ? activity.getApplicationContext() : getApplicationContext();
+    }
+
     //endregion
 
     private class InterstitialAdListener
@@ -530,8 +544,7 @@ public class ChartboostMediationAdapter
         {
             log( "Interstitial ad impression tracked: " + impressionEvent.getAd().getLocation() );
 
-            // Passing extra info such as creative id supported in 9.15.0+
-            if ( AppLovinSdk.VERSION_CODE >= 9150000 && !TextUtils.isEmpty( impressionEvent.getAdID() ) )
+            if ( !TextUtils.isEmpty( impressionEvent.getAdID() ) )
             {
                 Bundle extraInfo = new Bundle( 1 );
                 extraInfo.putString( "creative_id", impressionEvent.getAdID() );
@@ -620,8 +633,7 @@ public class ChartboostMediationAdapter
         {
             log( "Rewarded ad impression tracked: " + impressionEvent.getAd().getLocation() );
 
-            // Passing extra info such as creative id supported in 9.15.0+
-            if ( AppLovinSdk.VERSION_CODE >= 9150000 && !TextUtils.isEmpty( impressionEvent.getAdID() ) )
+            if ( !TextUtils.isEmpty( impressionEvent.getAdID() ) )
             {
                 Bundle extraInfo = new Bundle( 1 );
                 extraInfo.putString( "creative_id", impressionEvent.getAdID() );
@@ -632,8 +644,6 @@ public class ChartboostMediationAdapter
             {
                 listener.onRewardedAdDisplayed();
             }
-
-            listener.onRewardedAdVideoStarted();
         }
 
         @Override
@@ -647,7 +657,6 @@ public class ChartboostMediationAdapter
         public void onAdDismiss(@NonNull final DismissEvent dismissEvent)
         {
             String location = dismissEvent.getAd().getLocation();
-            listener.onRewardedAdVideoCompleted();
 
             if ( hasGrantedReward || shouldAlwaysRewardUser() )
             {
@@ -687,8 +696,7 @@ public class ChartboostMediationAdapter
 
             log( adFormat.getLabel() + " ad loaded: " + location );
 
-            // Passing extra info such as creative id supported in 9.15.0+
-            if ( AppLovinSdk.VERSION_CODE >= 9150000 && !TextUtils.isEmpty( cacheEvent.getAdID() ) )
+            if ( !TextUtils.isEmpty( cacheEvent.getAdID() ) )
             {
                 Bundle extraInfo = new Bundle( 1 );
                 extraInfo.putString( "creative_id", cacheEvent.getAdID() );
@@ -744,8 +752,7 @@ public class ChartboostMediationAdapter
         {
             log( adFormat.getLabel() + " ad impression tracked: " + impressionEvent.getAd().getLocation() );
 
-            // Passing extra info such as creative id supported in 9.15.0+
-            if ( AppLovinSdk.VERSION_CODE >= 9150000 && !TextUtils.isEmpty( impressionEvent.getAdID() ) )
+            if ( !TextUtils.isEmpty( impressionEvent.getAdID() ) )
             {
                 Bundle extraInfo = new Bundle( 1 );
                 extraInfo.putString( "creative_id", impressionEvent.getAdID() );
